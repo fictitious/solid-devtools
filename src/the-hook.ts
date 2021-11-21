@@ -50,7 +50,6 @@ function installHook(target: {}): Hook | undefined {
             const message: HookMessageSolidRegistered = {category: 'solid-devtools-hook', kind: 'solid-registered', buildType: solidInstance.buildType};
             window.postMessage(message, '*');
 
-            console.log(`posted window message`, message);
 //            this.emit('solid-registered', {solidInstance, id});
             return id;
         }//,
