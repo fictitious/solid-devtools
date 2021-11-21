@@ -1,0 +1,43 @@
+{
+    "name": "-",
+    "private": true,
+    "version": "0.1.0",
+    "scripts": {
+        "eslint": "eslint --ignore-path .gitignore .",
+        "eslint-fix-formatting": "eslint --ignore-path .gitignore --no-eslintrc --config .eslintrc.formatting.json --fix .",
+        "eslint-fix-html": "",
+        "build": "npm-run-all clean -p build:*",
+        "watch": "npm-run-all clean -l -p watch:*",
+        "build:pages": "vite build",
+        "build:scripts": "rollup -c",
+        "watch:pages": "vite build --watch",
+        "watch:scripts": "rollup -c --watch",
+        "clean": "rm -rf dist"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "eslint": "^8.2.0",
+        "eslint-plugin-import": "^2.25.3",
+        "eslint-plugin-unicorn": "^38.0.1",
+        "@typescript-eslint/parser": "^5.3.1",
+        "@typescript-eslint/eslint-plugin": "^5.3.1",
+        "@html-eslint/parser": "^0.12.0",
+        "@html-eslint/eslint-plugin": "^0.12.0",
+        "npm-run-all": "^4.1.5",  
+        "rollup": "^2.59.0",
+        "rollup-plugin-terser": "^7.0.2",
+        "@rollup/plugin-commonjs": "^21.0.1",
+        "@rollup/plugin-node-resolve": "^13.0.6",
+        "@rollup/plugin-typescript": "^8.3.0",
+        "typescript": ">=4.4",
+        "tslib": "^2.3.1",
+        "vite": "^2.7.0-beta.1",
+        "vite-plugin-solid": "^2.1.1",
+        "yarn": "^1.22.0",
+        "@types/chrome": "0.0.153"
+    },
+    "dependencies": {
+        "nullthrows": "^1.1.1",
+        "solid-js": "^1.2.2"
+    }
+}

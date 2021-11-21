@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "strict": true,
+      "types": ["chrome"],
+      "target": "esnext",
+      "module": "esnext",
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true,
+      "jsx": "preserve",
+      "jsxImportSource": "solid-js",
+    }
+}
+  

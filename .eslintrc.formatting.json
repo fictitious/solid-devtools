@@ -1,0 +1,63 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+        "@typescript-eslint",
+        "@html-eslint"
+    ],
+    "env": {
+        "es6": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2018,
+        "sourceType": "module"
+    },
+    "rules": {
+        "comma-dangle": ["error", "never"],
+        "space-before-blocks": ["error", "always"],
+        "keyword-spacing": ["error"],
+        "template-curly-spacing": ["error", "never"],
+        "object-curly-spacing": ["error", "never"],
+        "array-bracket-spacing": ["error", "never"],
+        "space-in-parens": ["error", "never"],
+        "comma-spacing": ["error", {"before": false, "after": true}],
+        "semi-spacing": ["error", {"before": false, "after": true}],
+        "block-spacing": ["error", "always"],
+        "arrow-spacing": ["error", {"before": true, "after": true}],
+        "arrow-parens": ["error", "as-needed"],
+        "no-trailing-spaces": "error",
+
+        "@typescript-eslint/indent": ["error", 4, {
+            "SwitchCase": 1,
+            "MemberExpression": 0,
+            "ignoreComments": true,
+            "flatTernaryExpressions": true
+        }],
+        "@typescript-eslint/semi": ["error", "always", {"omitLastInOneLineBlock": true}],
+        "@typescript-eslint/quotes": ["error", "single", {"allowTemplateLiterals": true}],
+        "@typescript-eslint/brace-style": ["error", "1tbs", {"allowSingleLine": true}],
+        "@typescript-eslint/func-call-spacing": ["error", "never"],
+        "@typescript-eslint/space-before-function-paren": ["error", {
+            "anonymous": "never",
+            "named": "never",
+            "asyncArrow": "always"
+        }],
+        "@typescript-eslint/member-delimiter-style": ["error", {
+          "multiline": {"delimiter": "semi", "requireLast": true},
+          "singleline": {"delimiter": "semi", "requireLast": false}
+        }]
+    },
+    "overrides": [{
+        "files": ["*.ts", "*.tsx"]
+    }, {
+        "files": ["*.html"],
+        "parser": "@html-eslint/parser",
+        "rules": {
+            "@html-eslint/indent": ["error", 4],
+            "@html-eslint/quotes": ["error", "double"],
+            "@html-eslint/no-extra-spacing-attrs": "error",
+            "@html-eslint/require-closing-tags": ["error", {"selfClosing": "never"}],
+            "@html-eslint/require-doctype": "error"
+        }
+    }]
+}
