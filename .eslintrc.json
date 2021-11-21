@@ -62,11 +62,6 @@
             }],
             "@typescript-eslint/consistent-type-imports": "error",
             "@typescript-eslint/consistent-type-exports": "error",
-            "@typescript-eslint/restrict-template-expressions": ["error", {
-                "allowBoolean": true,
-                "allowNumber": true,
-                "allowNullish": true
-            }],
             "@typescript-eslint/ban-types": ["error", {
                 "extendDefaults": true,
                 "types": {
