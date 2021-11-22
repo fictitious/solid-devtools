@@ -1,12 +1,14 @@
 
 import type {Hook, SolidInstance, ComponentWrapper} from './hook-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
+import type {ConnectorMessageFromDevtools, ConnectorMessageHelloAnswer} from '../connector-message-types';
 import {globalHookName} from './hook-name';
 
 let uidCounter = 0;
 
-class HookBaseImpl implements Hook {
+abstract class HookBaseImpl implements Hook {
 
+    abstract hookType: 'big' | 'small';
     solidInstances = new Map<number, SolidInstance>();
 
     registerSolidInstance(solidInstance: SolidInstance): number {
@@ -30,6 +32,19 @@ function installHook(target: {}, hook: Hook): void {
         enumerable: false,
         get() { return hook }
     });
+    window.addEventListener('message', onHelloMessage(hook.hookType));
+
+    function onHelloMessage(hookType: 'big' | 'small') {
+        return handler;
+        function handler(e: MessageEvent<ConnectorMessageFromDevtools>) {
+            if (e.source === window && e.data?.category === 'solid-devtools-connector' && e.data?.kind === 'hello') {
+                const answerMessage: ConnectorMessageHelloAnswer = {category: 'solid-devtools-connector', kind: 'helloAnswer', hookType};
+                window.postMessage(answerMessage, '*');
+                // init connector in the big hook here ?
+//                window.removeEventListener('message', handler);
+            }
+        }
+    }
 }
 
 export {HookBaseImpl, installHook};

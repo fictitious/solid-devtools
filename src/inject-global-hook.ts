@@ -37,7 +37,7 @@ window.addEventListener('message', ({data, source}: {data?: HookMessage; source:
 if ('text/html' === document.contentType) {
     const panelActivated = sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY);
 
-setTimeout(() => window.postMessage({category: 'solid-devtools-hook', kind: 'inject-global-hook', panelActivated}, '*'), 100);
+setTimeout(() => window.postMessage({category: 'solid-devtools-hook', kind: 'debug:inject-global-hook', panelActivated}, '*'), 100);
 
     injectScript(panelActivated ? '/scripts/hook-big.js' : '/scripts/hook-small.js');
 }

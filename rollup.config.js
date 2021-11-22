@@ -48,6 +48,13 @@ export default [{
     }
 }, {
     plugins,
+    input: 'src/content-script-relay.ts',
+    output: {
+        ...commonOutputSettings,
+        file: 'dist/unpacked/scripts/content-script-relay.js'
+    }
+}, {
+    plugins,
     input: 'src/on-panel-deactivated.ts',
     output: {
         ...commonOutputSettings,

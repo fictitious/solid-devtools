@@ -8,6 +8,7 @@ export interface SolidInstance { // 'renderer' in react devtools
 export type ComponentWrapper = (c: Component) => Component;
 
 export interface Hook {
+    hookType: 'big' | 'small';
     solidInstances: Map<number, SolidInstance>;
     registerSolidInstance(solidInstance: SolidInstance): void;
     getComponentWrapper(updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper;

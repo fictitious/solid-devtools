@@ -7,3 +7,25 @@
 export interface ConnectorMessageCategory {
     category: 'solid-devtools-connector';
 }
+
+export interface ConnectorMessageShutdown extends ConnectorMessageCategory {
+    kind: 'shutdown';
+}
+
+export interface ConnectorMessageHello extends ConnectorMessageCategory {
+    kind: 'hello';
+}
+
+export type ConnectorMessageFromDevtools =
+    | ConnectorMessageHello
+    | ConnectorMessageShutdown
+;
+
+export interface ConnectorMessageHelloAnswer extends ConnectorMessageCategory {
+    kind: 'helloAnswer';
+    hookType: 'big' | 'small';
+}
+
+export type ConnectorMessageFromPage =
+    | ConnectorMessageHelloAnswer
+;
