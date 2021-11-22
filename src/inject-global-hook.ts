@@ -7,7 +7,8 @@
 
 import nullthrows from 'nullthrows';
 
-import type {HookMessage} from './hook-message-types';
+import type {HookMessage} from './hook/hook-message-types';
+import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
 
 function injectScript(path: string) {
     const script = document.createElement('script');
@@ -34,5 +35,9 @@ window.addEventListener('message', ({data, source}: {data?: HookMessage; source:
 // Inject __SOLID_DEVTOOLS_GLOBAL_HOOK__ global for Solid to interact with.
 // Only do this for HTML documents though, to avoid e.g. breaking syntax highlighting for XML docs.
 if ('text/html' === document.contentType) {
-    injectScript('/scripts/the-hook.js');
+    const panelActivated = sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY);
+
+setTimeout(() => window.postMessage({category: 'solid-devtools-hook', kind: 'inject-global-hook', panelActivated}, '*'), 100);
+
+    injectScript(panelActivated ? '/scripts/hook-big.js' : '/scripts/hook-small.js');
 }

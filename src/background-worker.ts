@@ -1,5 +1,5 @@
 
-import type {HookMessage} from './hook-message-types';
+import type {HookMessage} from './hook/hook-message-types';
 import {setIconAndPopup} from './action-popup';
 import {createBackgroundRelay} from './background-relay';
 

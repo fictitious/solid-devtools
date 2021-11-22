@@ -48,15 +48,16 @@ which can be imported in the solid sources if desired
 
 hook attributes:
 
-- size
+- hookType
     - big: so that devtools agent can introduce wrappers for tracking the component tree (when devtools is open)
     - small: only for detection of presence of solid on a page (to show proper icon on extension action item when devtools is closed)
 
-- solid build type (whether "_SOLID_DEV_" string is optimized away from solid sources or not)
+- (not really an attribute of a hook, just an argument for registerSolidInstance hook method) solid build type (whether "_SOLID_DEV_" string is optimized away from solid sources or not)
+
     - development
     - production
 
-- hook source
+- hook source (planned)
     - extension: injected by chrome extension 
     - standalone: (planned) created by solid-devtools-standalone-hook package (planned), included in the page code for enabling standalone devtools on a separate page (w/o chrome extension)
 

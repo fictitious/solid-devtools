@@ -34,10 +34,17 @@ export default [{
     }
 }, {
     plugins,
-    input: 'src/the-hook.ts',
+    input: 'src/hook/hook-small.ts',
     output: {
         ...commonOutputSettings,
-        file: 'dist/unpacked/scripts/the-hook.js'
+        file: 'dist/unpacked/scripts/hook-small.js'
+    }
+}, {
+    plugins,
+    input: 'src/hook/hook-big.ts',
+    output: {
+        ...commonOutputSettings,
+        file: 'dist/unpacked/scripts/hook-big.js'
     }
 }, {
     plugins,

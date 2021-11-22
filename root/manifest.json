@@ -15,7 +15,10 @@
         "run_at": "document_start"
     }],
     "web_accessible_resources": [{
-        "resources": ["scripts/the-hook.js"],
+        "resources": [
+            "scripts/hook-small.js",
+            "scripts/hook-big.js"
+        ],
         "matches": ["<all_urls>"]
     }],
     "permissions": [

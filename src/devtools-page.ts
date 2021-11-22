@@ -1,5 +1,5 @@
 
-import {globalHookName} from './hook-name';
+import {globalHookName} from './hook/hook-name';
 import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
 
 chrome.devtools.network.onNavigated.addListener(checkPageForSolid);
@@ -16,55 +16,56 @@ const loadCheckInterval = setInterval(function() {
 
 let panelCreated = false; // this should be devtoolsPageStore really, keeping tabId, connector etc
 
+createPanelIfSolidLoaded();
+
 function createPanelIfSolidLoaded() {
-    if (panelCreated) {
-        return;
-    }
-
-    chrome.devtools.inspectedWindow.eval(
-        `window.${globalHookName} && window.${globalHookName}.solidInstances.size > 0`,
-        function(pageHasSolid) {
-            if (!pageHasSolid || panelCreated) {
-                return;
-            }
-
-            panelCreated = true;
-            let currentPanelWindow: Window | undefined;
-
-            clearInterval(loadCheckInterval);
-
-            const tabId = chrome.devtools.inspectedWindow.tabId;
-            initConnector(tabId);
-            chrome.devtools.panels.create(
-                'Components',
-                '',
-                'pages/panel.html',
-                extensionPanel => {
-                    extensionPanel.onShown.addListener(panelWindow => {
-                        chrome.devtools.inspectedWindow.eval(
-                            `sessionStorage.setItem('${SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY}', 'true')`
-                        );
-                        if (currentPanelWindow !== panelWindow) {
-                            currentPanelWindow = panelWindow;
-                            const rootElement = panelWindow.document.getElementById('root');
-                            console.log(`components panel shown:`, rootElement);
-                        }
-                    });
+    if (!panelCreated) {
+        chrome.devtools.inspectedWindow.eval(
+            `window.${globalHookName} ? {instanceCount: window.${globalHookName}.solidInstances.size, hookType: window.${globalHookName}.hookType} : {}`,
+            function({instanceCount = 0, hookType = ''}: {instanceCount: number; hookType: string}) {
+                if (instanceCount > 0 && !panelCreated) {
+                    panelCreated = true;
+                    createPanel();
                 }
-            );
+            }
+        );
+    }
+}
 
-            chrome.devtools.network.onNavigated.removeListener(checkPageForSolid);
+function createPanel(): void {
+    let currentPanelWindow: Window | undefined;
 
-            // Re-initialize DevTools panel when a new page is loaded.
-            chrome.devtools.network.onNavigated.addListener(function onNavigated() {
-                // todo call cleanup here
-//                flushSync(() => root.unmount());
+    clearInterval(loadCheckInterval);
 
-                initConnector(tabId);
+    const tabId = chrome.devtools.inspectedWindow.tabId;
+    initConnector(tabId);
+    chrome.devtools.panels.create(
+        'Components',
+        '',
+        'pages/panel.html',
+        extensionPanel => {
+            extensionPanel.onShown.addListener(panelWindow => {
+                chrome.devtools.inspectedWindow.eval(
+                    `sessionStorage.setItem('${SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY}', 'true')`
+                );
+                if (currentPanelWindow !== panelWindow) {
+                    currentPanelWindow = panelWindow;
+                    const rootElement = panelWindow.document.getElementById('root');
+                    console.log(`components panel shown:`, rootElement);
+                }
             });
         }
     );
 
+    chrome.devtools.network.onNavigated.removeListener(checkPageForSolid);
+
+    // Re-initialize DevTools panel when a new page is loaded.
+    chrome.devtools.network.onNavigated.addListener(function onNavigated() {
+        // todo call cleanup here
+//                flushSync(() => root.unmount());
+
+        initConnector(tabId);
+    });
 }
 
 function initConnector(tabId: number) {
@@ -72,5 +73,3 @@ function initConnector(tabId: number) {
         name: String(tabId)
     });
 }
-
-createPanelIfSolidLoaded();
