@@ -1,0 +1,4 @@
+
+import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
+
+sessionStorage.removeItem(SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY);

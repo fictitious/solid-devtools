@@ -39,4 +39,11 @@ export default [{
         ...commonOutputSettings,
         file: 'dist/unpacked/scripts/the-hook.js'
     }
+}, {
+    plugins,
+    input: 'src/on-panel-deactivated.ts',
+    output: {
+        ...commonOutputSettings,
+        file: 'dist/unpacked/scripts/on-panel-deactivated.js'
+    }
 }];

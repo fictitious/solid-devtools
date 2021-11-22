@@ -1,4 +1,5 @@
 import type {HookMessageSolidRegistered} from './hook-message-types';
+import {globalHookName} from './hook-name';
 
 export interface SolidInstance { // 'renderer' in react devtools
     buildType: 'development' | 'production';
@@ -31,10 +32,9 @@ export interface Hook {
 */
 }
 
-export const theHookName = '__SOLID_DEVTOOLS_GLOBAL_HOOK__';
 
 function installHook(target: {}): Hook | undefined {
-    if (target.hasOwnProperty(theHookName)) {
+    if (target.hasOwnProperty(globalHookName)) {
         return undefined;
     }
 
@@ -86,7 +86,7 @@ function installHook(target: {}): Hook | undefined {
         }
 */
     };
-    Object.defineProperty(target, theHookName, {
+    Object.defineProperty(target, globalHookName, {
         enumerable: false,
         get() { return hook }
     });

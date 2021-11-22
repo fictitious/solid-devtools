@@ -18,6 +18,9 @@
         "resources": ["scripts/the-hook.js"],
         "matches": ["<all_urls>"]
     }],
+    "permissions": [
+        "scripting"
+    ],
     "host_permissions": [
         "file:///*",
         "http://*/*",

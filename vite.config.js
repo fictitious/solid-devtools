@@ -15,6 +15,7 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 'devtools-page': pf.resolve(__dirname, 'pages/devtools-page.html'),
+                'panel': pf.resolve(__dirname, 'pages/panel.html'),
                 'popup-development': pf.resolve(__dirname, 'pages/popups/development.html'),
                 'popup-production': pf.resolve(__dirname, 'pages/popups/production.html'),
                 'popup-disabled': pf.resolve(__dirname, 'pages/popups/disabled.html'),
