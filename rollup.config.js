@@ -20,7 +20,7 @@ const commonOutputSettings = {
 
 export default [{
     plugins,
-    input: 'src/background-worker.ts',
+    input: 'src/background/background-worker.ts',
     output: {
         ...commonOutputSettings,
         file: 'dist/unpacked/scripts/background-worker.js'
