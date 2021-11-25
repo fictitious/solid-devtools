@@ -8,7 +8,7 @@
 import nullthrows from 'nullthrows';
 
 import type {HookMessage} from './hook/hook-message-types';
-import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
+import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './devtools-page/storage-keys';
 
 function injectScript(path: string) {
     const script = document.createElement('script');
@@ -39,5 +39,5 @@ if ('text/html' === document.contentType) {
 
 setTimeout(() => window.postMessage({category: 'solid-devtools-hook', kind: 'debug:inject-global-hook', panelActivated}, '*'), 100);
 
-    injectScript(panelActivated ? '/scripts/hook-big.js' : '/scripts/hook-small.js');
+    injectScript(panelActivated ? '/scripts/hook.js' : '/scripts/hook-stub.js');
 }

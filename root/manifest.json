@@ -16,8 +16,8 @@
     }],
     "web_accessible_resources": [{
         "resources": [
-            "scripts/hook-small.js",
-            "scripts/hook-big.js"
+            "scripts/hook.js",
+            "scripts/hook-stub.js"
         ],
         "matches": ["<all_urls>"]
     }],

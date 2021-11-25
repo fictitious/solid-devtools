@@ -1,14 +1,14 @@
 
-import type {Hook, SolidInstance, ComponentWrapper} from './hook-types';
+import type {HookType, HookBase, SolidInstance, ComponentWrapper} from './hook-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ConnectorMessageFromDevtools, ConnectorMessageHelloAnswer} from '../connector-message-types';
 import {globalHookName} from './hook-name';
 
 let uidCounter = 0;
 
-abstract class HookBaseImpl implements Hook {
+abstract class HookBaseImpl implements HookBase {
 
-    abstract hookType: 'big' | 'small';
+    abstract hookType: 'full' | 'stub';
     solidInstances = new Map<number, SolidInstance>();
 
     registerSolidInstance(solidInstance: SolidInstance): number {
@@ -24,7 +24,7 @@ abstract class HookBaseImpl implements Hook {
     }
 }
 
-function installHook(target: {}, hook: Hook): void {
+function installHook(target: {}, hook: HookBase): void {
     if (target.hasOwnProperty(globalHookName)) {
         return undefined;
     }
@@ -34,7 +34,7 @@ function installHook(target: {}, hook: Hook): void {
     });
     window.addEventListener('message', onHelloMessage(hook.hookType));
 
-    function onHelloMessage(hookType: 'big' | 'small') {
+    function onHelloMessage(hookType: HookType) {
         return handler;
         function handler(e: MessageEvent<ConnectorMessageFromDevtools>) {
             if (e.source === window && e.data?.category === 'solid-devtools-connector' && e.data?.kind === 'hello') {
