@@ -1,8 +1,7 @@
 
 
 import {globalHookName} from '../hook/hook-name';
-import type {HookType} from '../hook/hook-types';
-import type {ConnectorMessageFromPage, ConnectorMessageHelloAnswer} from '../connector-message-types';
+import type {ChannelMessageFromPage, HelloAnswer} from '../channel/channel-message-types';
 import type {ConnectionState, ChannelState} from './connection-state';
 import {createConnectionState} from './connection-state';
 import {createPanel} from './create-panel';
@@ -13,21 +12,20 @@ function createConnectionAndPanelIfSolidDetected(cleanupOnSolidFirstDetected: ()
     if (!connectionState) {
         chrome.devtools.inspectedWindow.eval(
             `({instanceCount: window.${globalHookName}?.solidInstances.size, hookType: window.${globalHookName}?.hookType})`,
-            function({instanceCount = 0, hookType = ''}: {instanceCount: number; hookType: string}) {
+            function({instanceCount = 0, hookType = ''}: {instanceCount?: number; hookType?: string} = {}) {
                 if (instanceCount > 0 && !connectionState) {
                     cleanupOnSolidFirstDetected();
-                    createConnection(hookType === 'full' ? 'full' : 'stub');
-                    createPanel(connectionState!);
+                    connectionState = createConnectionState(hookType === 'full' ? 'full' : 'stub');
+                    createConnection(chrome.devtools.inspectedWindow.tabId);
+                    createPanel(connectionState);
                 }
             }
         );
     }
 }
 
-function createConnection(initialHookType: HookType): void {
+function createConnection(tabId: number): void {
 
-    connectionState = createConnectionState(initialHookType);
-    const tabId = chrome.devtools.inspectedWindow.tabId;
 
     initConnector(tabId);
 
@@ -44,7 +42,7 @@ function createConnection(initialHookType: HookType): void {
     });
 }
 
-function initConnector(tabId: number): chrome.runtime.Port {
+function initConnector(tabId: number) {
     const port = chrome.runtime.connect({
         name: String(tabId)
     });
@@ -52,7 +50,7 @@ function initConnector(tabId: number): chrome.runtime.Port {
     port.onMessage.addListener(connectionListener);
     connectionState?.setChannelState('connecting');
 
-    function connectionListener(message: ConnectorMessageFromPage): void {
+    function connectionListener(message: ChannelMessageFromPage): void {
         if (message.kind === 'helloAnswer') {
             connectionState?.setHookType(message.hookType);
             connectionState?.setChannelState(connectedState(message));
@@ -64,10 +62,9 @@ function initConnector(tabId: number): chrome.runtime.Port {
         port.onMessage.removeListener(connectionListener);
         port.onDisconnect.removeListener(disconnectListener);
     }
-    return port;
 }
 
-function connectedState(message: ConnectorMessageHelloAnswer): ChannelState {
+function connectedState(message: HelloAnswer): ChannelState {
     return message.hookType === 'full' && !message.deactivated ? 'connected': 'connected-incapable';
 }
 

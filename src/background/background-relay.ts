@@ -78,4 +78,28 @@ function injectOnDevtoolsDisconnect(tabId: string) {
     }
 }
 
+function sendDebugMessage(text: string) {
+    Object.entries(ports).forEach(([tabId, {contentScript}]) => {
+        contentScript?.postMessage({
+            category: 'solid-devtools-connector',
+            kind: 'background-worker-debug',
+            debug: text
+        });
+    });
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+    console.log(`onInstalled: ports=`, ports);
+    sendDebugMessage('onInstalled');
+});
+chrome.runtime.onSuspend.addListener(() => {
+    sendDebugMessage('onSuspend');
+    console.log(`onSuspend: ports=`, ports);
+});
+chrome.runtime.onUpdateAvailable.addListener(() => {
+    sendDebugMessage('onUpdateAvailable');
+    console.log(`onSuspend: ports=`, ports);
+});
+
+
 export {createBackgroundRelay};
