@@ -1,3 +1,4 @@
+// based on main.js from React Devtools
 
 import {createConnectionAndPanelIfSolidDetected} from './create-connection';
 

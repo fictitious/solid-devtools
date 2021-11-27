@@ -1,4 +1,4 @@
-
+// based on main.js from React Devtools
 
 import {globalHookName} from '../hook/hook-name';
 import type {ChannelMessageFromPage, HelloAnswer} from '../channel/channel-message-types';

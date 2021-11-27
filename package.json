@@ -1,7 +1,10 @@
 {
     "name": "-",
-    "private": true,
     "version": "0.1.0",
+    "description": "Solid Developer Tools Chrome Extension",
+    "private": true,
+    "author": "Artem Khodyush",
+    "license": "MIT",
     "scripts": {
         "eslint": "eslint --ignore-path .gitignore .",
         "eslint-fix-formatting": "eslint --ignore-path .gitignore --no-eslintrc --config .eslintrc.formatting.json --fix .",
@@ -14,7 +17,6 @@
         "watch:scripts": "rollup -c --watch",
         "clean": "rm -rf dist"
     },
-    "license": "MIT",
     "devDependencies": {
         "eslint": "^8.2.0",
         "eslint-plugin-import": "^2.25.3",

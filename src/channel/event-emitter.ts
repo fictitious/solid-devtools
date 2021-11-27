@@ -1,4 +1,4 @@
-
+// based on events.js from React Devtools
 
 export type Listener = (arg: unknown) => void;
 

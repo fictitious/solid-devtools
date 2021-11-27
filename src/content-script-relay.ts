@@ -1,3 +1,5 @@
+// based on contentScript.js from React Devtools
+
 import type {ChannelMessageFromPage} from './channel/channel-message-types';
 import {messageFromDevtools} from './channel/channel-message-types';
 

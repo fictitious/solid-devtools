@@ -1,3 +1,5 @@
+// based on bridge.js from React Devtools
+
 import {EventEmitterImpl} from './event-emitter';
 import type {Channel} from './channel-message-types';
 

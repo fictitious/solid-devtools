@@ -3,6 +3,7 @@
     "name": "Solid Developer Tools",
     "version": "0.1.0",
     "version_name": "0.1.0 (minimal skeleton)",
+    "author": "Artem Khodyush",
     "minimum_chrome_version": "94",
 
     "devtools_page": "pages/devtools-page.html",

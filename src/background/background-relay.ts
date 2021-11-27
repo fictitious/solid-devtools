@@ -1,3 +1,5 @@
+// based on doublePipe() in background.js from React Devtools
+
 interface PortPair {
     devtools?: chrome.runtime.Port;
     contentScript?: chrome.runtime.Port;
