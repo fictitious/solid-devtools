@@ -20,6 +20,9 @@ abstract class HookBaseImpl implements HookBase {
         return id;
     }
 
+    initChannel(): void {
+    }
+
     getComponentWrapper(_updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper {
         return c => c;
     }
@@ -40,8 +43,7 @@ function installHook(target: {}, hook: HookBase): void {
         function handler(e: MessageEvent<ChannelMessageFromDevtools>) {
             if (e.source === window && e.data?.category === 'solid-devtools-channel' && e.data?.kind === 'hello') {
                 window.postMessage(messageFromPage('helloAnswer', {hookType}), '*');
-                // init connector in the big hook here ?
-//                window.removeEventListener('message', handler);
+                hook.initChannel();
             }
         }
     }

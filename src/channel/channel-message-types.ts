@@ -21,27 +21,28 @@ export interface HelloAnswer {
 
 const fromDevtools = messages({
     hello: message(),
-    shutdown: message()
+    shutdown: message(),
+    'test-message': message()
 });
 
 const fromPage = messages({
     helloAnswer: message<HelloAnswer>()
 });
 
-export type ChannelMessageFromDevtoolsMap = {[K in keyof typeof fromDevtools]: {category: 'solid-devtools-channel'; kind: K} & typeof fromDevtools[K][0]};
+export type ChannelMessageFromDevtoolsMap = {[K in keyof typeof fromDevtools]: {category: 'solid-devtools-channel'; from: 'devtools'; kind: K} & typeof fromDevtools[K][0]};
 
 export type ChannelMessageFromDevtools = ChannelMessageFromDevtoolsMap[keyof ChannelMessageFromDevtoolsMap];
 
-export type ChannelMessageFromPageMap = {[K in keyof typeof fromPage]: {category: 'solid-devtools-channel'; kind: K} & typeof fromPage[K][0]};
+export type ChannelMessageFromPageMap = {[K in keyof typeof fromPage]: {category: 'solid-devtools-channel'; from: 'page'; kind: K} & typeof fromPage[K][0]};
 
 export type ChannelMessageFromPage = ChannelMessageFromPageMap[keyof ChannelMessageFromPageMap];
 
 function messageFromDevtools<K extends keyof typeof fromDevtools>(kind: K, content: typeof fromDevtools[K][0]): ChannelMessageFromDevtoolsMap[K] {
-    return Object.assign({}, {category: 'solid-devtools-channel', kind}, content) as unknown as ChannelMessageFromDevtoolsMap[K];
+    return Object.assign({}, {category: 'solid-devtools-channel', from: 'devtools', kind}, content) as unknown as ChannelMessageFromDevtoolsMap[K];
 }
 
 function messageFromPage<K extends keyof typeof fromPage>(kind: K, content: typeof fromPage[K][0]): ChannelMessageFromPageMap[K] {
-    return Object.assign({}, {category: 'solid-devtools-channel', kind}, content) as unknown as ChannelMessageFromPageMap[K];
+    return Object.assign({}, {category: 'solid-devtools-channel', from: 'page', kind}, content) as unknown as ChannelMessageFromPageMap[K];
 }
 
 export type Channel<Side extends 'devtools' | 'page'> =

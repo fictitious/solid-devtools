@@ -2,6 +2,8 @@
 
 import {globalHookName} from '../hook/hook-name';
 import type {ChannelMessageFromPage, HelloAnswer} from '../channel/channel-message-types';
+import {createChannel} from '../channel/channel';
+import type {Message} from '../channel/channel';
 import type {ConnectionState, ChannelState} from './connection-state';
 import {createConnectionState} from './connection-state';
 import {createPanel} from './create-panel';
@@ -53,12 +55,28 @@ function initConnector(tabId: number) {
     function connectionListener(message: ChannelMessageFromPage): void {
         if (message.kind === 'helloAnswer') {
             connectionState?.setHookType(message.hookType);
-            connectionState?.setChannelState(connectedState(message));
+            const channelState = connectedState(message);
+            connectionState?.setChannelState(channelState);
+            if (channelState === 'connected') {
+                initChannel();
+            }
             port.onMessage.removeListener(connectionListener);
         }
     }
+    function initChannel() {
+        connectionState?.setChannel(createChannel('devtools', {
+            subscribe(fn: (message: Message) => void) {
+                port.onMessage.addListener(fn);
+                return () => port.onMessage.removeListener(fn);
+            },
+            send(message: Message) {
+                port.postMessage(message);
+            }
+        }));
+    }
     function disconnectListener() {
         connectionState?.setChannelState('disconnected');
+        connectionState?.setChannel(undefined);
         port.onMessage.removeListener(connectionListener);
         port.onDisconnect.removeListener(disconnectListener);
     }

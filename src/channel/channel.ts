@@ -21,7 +21,10 @@ class ChannelImpl extends EventEmitterImpl {
     messageQueue: Message[] = [];
     timeoutID: ReturnType<typeof setTimeout> | undefined;
 
-    constructor(public transport: Transport) {
+    constructor(
+        public side: 'devtools' | 'page',
+        public transport: Transport
+    ) {
         super();
         this.transportUnsubscribe = transport.subscribe(message => this.emit(message));
     }
@@ -37,7 +40,7 @@ class ChannelImpl extends EventEmitterImpl {
         if (this.isShutdown) {
             console.warn(`cannot send message ${kind} via channel that has been shutdown`);
         } else {
-            const message = Object.assign({}, {category: 'solid-devtools-channel', kind}, content);
+            const message = Object.assign({}, {category: 'solid-devtools-channel', from: this.side, kind}, content);
             this.messageQueue.push(message);
             if (this.timeoutID === undefined) {
                 this.timeoutID = setTimeout(this.flush, 0);
@@ -76,8 +79,8 @@ class ChannelImpl extends EventEmitterImpl {
     };
 }
 
-function createChannel<Side extends 'devtools' | 'page'>(transport: Transport): Channel<Side> {
-    return new ChannelImpl(transport) as Channel<Side>;
+function createChannel<Side extends 'devtools' | 'page'>(side: Side, transport: Transport): Channel<Side> {
+    return new ChannelImpl(side, transport) as unknown as Channel<Side>;
 }
 
 export {createChannel};

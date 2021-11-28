@@ -11,6 +11,7 @@ export interface HookBase {
     hookType: 'full' | 'stub';
     solidInstances: Map<number, SolidInstance>;
     registerSolidInstance(solidInstance: SolidInstance): void;
+    initChannel(): void;
     getComponentWrapper(updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper;
 }
 
