@@ -1,30 +1,42 @@
 
-import type {HookType, HookBase, SolidInstance, ComponentWrapper} from './hook-types';
+import type {SolidInstance} from './wrappers/types';
+import type {HookType, HookBase, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
-import type {ChannelMessageFromDevtools} from '../channel/channel-message-types';
+import type {Channel, ChannelMessageFromDevtools} from '../channel/channel-message-types';
 import {messageFromPage} from '../channel/channel-message-types';
 import {globalHookName} from './hook-name';
-
-let uidCounter = 0;
 
 abstract class HookBaseImpl implements HookBase {
 
     abstract hookType: 'full' | 'stub';
-    solidInstances = new Map<number, SolidInstance>();
+    abstract channel: Channel<'page'>;
+    deactivated?: boolean;
+    solidInstance: SolidInstance | undefined;
 
-    registerSolidInstance(solidInstance: SolidInstance): number {
-        const id = ++uidCounter;
-        this.solidInstances.set(id, solidInstance);
-        const message: HookMessageSolidRegistered = {category: 'solid-devtools-hook', kind: 'solid-registered', buildType: solidInstance.buildType};
-        window.postMessage(message, '*');
-        return id;
+    registerSolidInstance(solidInstance: SolidInstance): void {
+        if (this.solidInstance) {
+            console.error(`There are multiple instances of Solid trying to register with devtools. This is not supported.`);
+
+        } else {
+            this.solidInstance = solidInstance;
+            const message: HookMessageSolidRegistered = {category: 'solid-devtools-hook', kind: 'solid-registered', buildType: solidInstance.buildType};
+            window.postMessage(message, '*');
+        }
     }
 
-    initChannel(): void {
+    connectChannel(): void {
     }
 
-    getComponentWrapper(_updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper {
+    getComponentWrapper(_updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper {
         return c => c;
+    }
+
+    getInsertParentWrapper(_updateWrapper: (newWrapper: HookInsertParentWrapper) => void): HookInsertParentWrapper {
+        return p => p;
+    }
+
+    getRegisterRoot(_updateRegisterRoot: (newRegisterRoot: HookRegisterRoot) => void): HookRegisterRoot {
+        return () => () => {};
     }
 }
 
@@ -42,8 +54,8 @@ function installHook(target: {}, hook: HookBase): void {
         return handler;
         function handler(e: MessageEvent<ChannelMessageFromDevtools>) {
             if (e.source === window && e.data?.category === 'solid-devtools-channel' && e.data?.kind === 'hello') {
-                window.postMessage(messageFromPage('helloAnswer', {hookType}), '*');
-                hook.initChannel();
+                window.postMessage(messageFromPage('helloAnswer', {hookType, deactivated: hook.deactivated}), '*');
+                hook.connectChannel();
             }
         }
     }

@@ -10,12 +10,12 @@ import {createPanel} from './create-panel';
 
 let connectionState: ConnectionState | undefined;
 
-function createConnectionAndPanelIfSolidDetected(cleanupOnSolidFirstDetected: () => void) {
+function createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected: () => void) {
     if (!connectionState) {
         chrome.devtools.inspectedWindow.eval(
-            `({instanceCount: window.${globalHookName}?.solidInstances.size, hookType: window.${globalHookName}?.hookType})`,
-            function({instanceCount = 0, hookType = ''}: {instanceCount?: number; hookType?: string} = {}) {
-                if (instanceCount > 0 && !connectionState) {
+            `({solidRegistered: !!window.${globalHookName}?.solidInstance, hookType: window.${globalHookName}?.hookType})`,
+            function({solidRegistered = false, hookType = ''}: {solidRegistered?: boolean; hookType?: string} = {}) {
+                if (solidRegistered && !connectionState) {
                     cleanupOnSolidFirstDetected();
                     connectionState = createConnectionState(hookType === 'full' ? 'full' : 'stub');
                     createConnection(chrome.devtools.inspectedWindow.tabId);
@@ -86,4 +86,4 @@ function connectedState(message: HelloAnswer): ChannelState {
     return message.hookType === 'full' && !message.deactivated ? 'connected': 'connected-incapable';
 }
 
-export {createConnectionAndPanelIfSolidDetected};
+export {createConnectionAndPanelIfSolidRegistered};

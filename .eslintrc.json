@@ -22,7 +22,7 @@
     },
     "rules": {
         "max-len": ["error", {"code": 220}],
-        "no-console": ["warn", {"allow": ["warn"]}],
+        "no-console": ["warn", {"allow": ["warn", "error"]}],
         "no-prototype-builtins": "off",
         "no-empty-function": "off",
         "no-return-await": "error",

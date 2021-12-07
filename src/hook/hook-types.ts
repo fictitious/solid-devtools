@@ -1,18 +1,24 @@
 
 import type {Component} from 'solid-js';
 
-export interface SolidInstance { // 'renderer' in react devtools
-    buildType: 'development' | 'production';
-}
+import type {Channel} from '../channel/channel-message-types';
+import type {SolidInstance} from './wrappers/types';
 
-export type ComponentWrapper = (c: Component) => Component;
+export type HookComponentWrapper = (c: Component) => Component;
+export type HookInsertParentWrapper = (p: Node) => {};
+export type HookRegisterRoot = (r: Node) => () => void;
+
 
 export interface HookBase {
     hookType: 'full' | 'stub';
-    solidInstances: Map<number, SolidInstance>;
+    solidInstance?: SolidInstance;
+    channel: Channel<'page'>;
+    deactivated?: boolean;
     registerSolidInstance(solidInstance: SolidInstance): void;
-    initChannel(): void;
-    getComponentWrapper(updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper;
+    connectChannel(): void;
+    getComponentWrapper(updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper;
+    getInsertParentWrapper(updateWrapper: (newWrapper: HookInsertParentWrapper) => void): HookInsertParentWrapper;
+    getRegisterRoot(updateRegisterRoot: (newRegisterRoot: HookRegisterRoot) => void): HookRegisterRoot;
 }
 
 // hook to inject into the page when solid devtools panel is not open
@@ -21,7 +27,7 @@ export interface HookStub extends HookBase {
 }
 
 // hook to inject into the page when solid devtools panel is open
-export interface Hook extends HookBase {
+export interface HookFull extends HookBase {
     hookType: 'full';
 }
 

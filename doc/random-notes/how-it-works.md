@@ -4,10 +4,10 @@
 injects a script into every page by addign a `script` tag with a code that creates `__SOLID_DEVTOOLS_GLOBAL_HOOK__` 
 property on the window object, to announce to every page that Solid devtools is available.
 
-`__SOLID_DEVTOOLS_GLOBAL_HOOK__` is an event emitter, and it keeps a map of registered solid instances.
+`__SOLID_DEVTOOLS_GLOBAL_HOOK__` is an event emitter
 
-Solid.js code, when it detects a presence of `__SOLID_DEVTOOLS_GLOBAL_HOOK__` global, calls hook `registerSolidInstance()` method,
-which adds it to the `solidInstances` map, and emits `solid-registered` hook event.
+Solid global initialization code checks for a presence of `__SOLID_DEVTOOLS_GLOBAL_HOOK__` global, and calls hook `registerSolidInstance()` method if detected,
+which stores solid instance in the `solidInstance` hook property, and emits `solid-registered` hook event.
 
 
 === 

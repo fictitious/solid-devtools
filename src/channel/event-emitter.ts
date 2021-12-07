@@ -4,7 +4,11 @@ export type Listener = (arg: unknown) => void;
 
 class EventEmitterImpl {
 
-    listenersMap: Map<string, Listener[]> = new Map();
+    listenersMap: Map<string, Listener[]>;
+
+    constructor() {
+        this.listenersMap = new Map();
+    }
 
     addListener(kind: string, listener: Listener): void {
         const listeners = this.listenersMap.get(kind);

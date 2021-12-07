@@ -1,5 +1,6 @@
 
 import type {HookType} from '../hook/hook-types';
+import type {SerializedValue} from './serialized-value';
 
 // Types for messages that go through the solid devtools channel - messages exchanged
 // between the devtools agent in the page and the devtools panel.
@@ -19,6 +20,51 @@ export interface HelloAnswer {
     deactivated?: boolean;  // true if 'full' hook was deactivated after devtools has disconnected
 }
 
+export interface ComponentRendered {
+    id: string;
+    name: string;
+    props: SerializedValue;
+}
+
+export interface ComponentGone {
+    id: string;
+}
+
+export interface DomNodeRegistered {
+    id: string;
+    nodeType: number;
+    name?: string | null;
+    value?: string | null;
+}
+
+export interface DomNodeGone {
+    id: string;
+}
+
+export interface DomNodeAddedResultOf {
+    id: string;
+    resultOf: string;
+}
+
+export interface DomNodeIsRoot {
+    id: string;
+}
+
+export interface DomNodeRootGone {
+    id: string;
+}
+
+export interface DomNodeAppended {
+    parentId: string;
+    childIds: string[];
+}
+export interface DomNodeInserted {
+    parentId: string;
+    childIds: string[];
+    prevId?: string;
+    nextId?: string;
+}
+
 const fromDevtools = messages({
     hello: message(),
     shutdown: message(),
@@ -26,7 +72,16 @@ const fromDevtools = messages({
 });
 
 const fromPage = messages({
-    helloAnswer: message<HelloAnswer>()
+    helloAnswer: message<HelloAnswer>(),
+    componentRendered: message<ComponentRendered>(),
+    componentGone: message<ComponentGone>(),
+    domNodeRegistered: message<DomNodeRegistered>(),
+    domNodeGone: message<DomNodeGone>(),
+    domNodeAddedResultOf: message<DomNodeAddedResultOf>(),
+    domNodeIsRoot: message<DomNodeIsRoot>(),
+    domNodeRootGone: message<DomNodeRootGone>(),
+    domNodeAppended: message<DomNodeAppended>(),
+    domNodeInserted: message<DomNodeInserted>()
 });
 
 export type ChannelMessageFromDevtoolsMap = {[K in keyof typeof fromDevtools]: {category: 'solid-devtools-channel'; from: 'devtools'; kind: K} & typeof fromDevtools[K][0]};

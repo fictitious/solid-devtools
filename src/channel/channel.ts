@@ -17,8 +17,8 @@ const BATCH_DURATION_MILLISECONDS = 100;
 class ChannelImpl extends EventEmitterImpl {
 
     transportUnsubscribe: () => void;
-    isShutdown = false;
-    messageQueue: Message[] = [];
+    isShutdown: boolean;
+    messageQueue: Message[];
     timeoutID: ReturnType<typeof setTimeout> | undefined;
 
     constructor(
@@ -27,6 +27,8 @@ class ChannelImpl extends EventEmitterImpl {
     ) {
         super();
         this.transportUnsubscribe = transport.subscribe(message => this.emit(message));
+        this.isShutdown = false;
+        this.messageQueue = [];
     }
 
     emit(message: Message) {
