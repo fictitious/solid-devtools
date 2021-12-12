@@ -26,7 +26,7 @@ export interface ComponentRendered {
     props: SerializedValue;
 }
 
-export interface ComponentGone {
+export interface ComponentDisposed {
     id: string;
 }
 
@@ -37,20 +37,21 @@ export interface DomNodeRegistered {
     value?: string | null;
 }
 
-export interface DomNodeGone {
+export interface DomNodeRemoved {
     id: string;
 }
 
 export interface DomNodeAddedResultOf {
     id: string;
     resultOf: string;
+    index: number[];
 }
 
 export interface DomNodeIsRoot {
     id: string;
 }
 
-export interface DomNodeRootGone {
+export interface DomNodeRootDisposed {
     id: string;
 }
 
@@ -74,12 +75,12 @@ const fromDevtools = messages({
 const fromPage = messages({
     helloAnswer: message<HelloAnswer>(),
     componentRendered: message<ComponentRendered>(),
-    componentGone: message<ComponentGone>(),
+    componentDisposed: message<ComponentDisposed>(),
     domNodeRegistered: message<DomNodeRegistered>(),
-    domNodeGone: message<DomNodeGone>(),
+    domNodeRemoved: message<DomNodeRemoved>(),
     domNodeAddedResultOf: message<DomNodeAddedResultOf>(),
     domNodeIsRoot: message<DomNodeIsRoot>(),
-    domNodeRootGone: message<DomNodeRootGone>(),
+    domNodeRootDisposed: message<DomNodeRootDisposed>(),
     domNodeAppended: message<DomNodeAppended>(),
     domNodeInserted: message<DomNodeInserted>()
 });

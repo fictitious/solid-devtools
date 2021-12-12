@@ -37,16 +37,24 @@ class InsertParentWrapperImpl {
         this.parent.removeChild(child);
     }
 
-    insertBefore(child: Node & NodeExtra, before: Node & NodeExtra): void {
+    insertBefore(child: Node & NodeExtra, before: Node & NodeExtra | null): void {
         const childIds = findRegisteredDescendantsOrSelf(child).map(c => c[solidDevtoolsKey].id);
         if (childIds.length) {
-            const rp = findOrRegisterAncestorOrSelf(this.parent, this.registry);
+            const findSiblings = before ? {
+                prev: findRegisteredPrevSiblingOrSelf(before.previousSibling),
+                next: findRegisteredNextSiblingOrSelf(before)
+            } : undefined;
+
+            const rp = findOrRegisterAncestorOrSelf(this.parent, this.registry, findSiblings);
             if (!before) {
                 this.channel.send('domNodeAppended', {parentId: rp[solidDevtoolsKey].id, childIds});
             } else {
-                const prev = findRegisteredPrevSiblingOrSelf(before.previousSibling);
-                const next = findRegisteredNextSiblingOrSelf(before);
-                this.channel.send('domNodeInserted', {parentId: rp[solidDevtoolsKey].id, childIds, prevId: prev?.[solidDevtoolsKey].id, nextId: next?.[solidDevtoolsKey].id});
+                this.channel.send('domNodeInserted', {
+                    parentId: rp[solidDevtoolsKey].id,
+                    childIds,
+                    prevId: findSiblings?.prev?.[solidDevtoolsKey].id,
+                    nextId: findSiblings?.next?.[solidDevtoolsKey].id
+                });
             }
         }
         this.parent.insertBefore(child, before);
@@ -54,12 +62,20 @@ class InsertParentWrapperImpl {
 
     replaceChild(newChild: Node & NodeExtra, oldChild: Node & NodeExtra): void {
         const childIds = findRegisteredDescendantsOrSelf(newChild).map(c => c[solidDevtoolsKey].id);
-        const prev = childIds.length ? findRegisteredPrevSiblingOrSelf(oldChild.previousSibling) : undefined;
-        const next = childIds.length ? findRegisteredNextSiblingOrSelf(oldChild.nextSibling) : undefined;
+        const findSiblings = childIds.length ? {
+            prev: findRegisteredPrevSiblingOrSelf(oldChild.previousSibling),
+            next: findRegisteredNextSiblingOrSelf(oldChild.nextSibling)
+        } : undefined;
+
         this.nodeRemoved(oldChild);
         if (childIds.length) {
-            const rp = findOrRegisterAncestorOrSelf(this.parent, this.registry);
-            this.channel.send('domNodeInserted', {parentId: rp[solidDevtoolsKey].id, childIds, prevId: prev?.[solidDevtoolsKey].id, nextId: next?.[solidDevtoolsKey].id});
+            const rp = findOrRegisterAncestorOrSelf(this.parent, this.registry, findSiblings);
+            this.channel.send('domNodeInserted', {
+                parentId: rp[solidDevtoolsKey].id,
+                childIds,
+                prevId: findSiblings?.prev?.[solidDevtoolsKey].id,
+                nextId: findSiblings?.next?.[solidDevtoolsKey].id
+            });
         }
         this.parent.replaceChild(newChild, oldChild);
     }
@@ -67,17 +83,25 @@ class InsertParentWrapperImpl {
     nodeRemoved(node: Node & NodeExtra) {
         const rc = findRegisteredDescendantsOrSelf(node);
         for (const e of rc) {
-            this.channel.send('domNodeGone', {id: e[solidDevtoolsKey].id});
+            this.channel.send('domNodeRemoved', {id: e[solidDevtoolsKey].id});
         }
         unregisterDomNode(node, this.registry);
     }
 }
 
-function findOrRegisterAncestorOrSelf(node: Node & NodeExtra, registry: Registry): Node & Required<NodeExtra> {
+function findOrRegisterAncestorOrSelf(
+    node: Node & NodeExtra,
+    registry: Registry,
+    findSiblings?: {prev?: Node & Required<NodeExtra> | undefined; next?: Node & Required<NodeExtra> | undefined}
+): Node & Required<NodeExtra> {
     let result: Node & NodeExtra | null = node;
     let lastParent: Node & NodeExtra | null = null;
     while (result && !result[solidDevtoolsKey]) {
         lastParent = result;
+        if (findSiblings) {
+            findSiblings.prev = findSiblings.prev ?? findRegisteredPrevSiblingOrSelf(result);
+            findSiblings.next = findSiblings.next ?? findRegisteredNextSiblingOrSelf(result);
+        }
         result = result.parentNode;
     }
     if (result?.[solidDevtoolsKey]) {
@@ -86,16 +110,6 @@ function findOrRegisterAncestorOrSelf(node: Node & NodeExtra, registry: Registry
         return registry.registerDomNode(lastParent!);
     }
 }
-
-/*
-function findRegisteredAncestorOrSelf(node: Node & NodeExtra): Node & Required<NodeExtra> | null {
-    let result: Node & NodeExtra | null = node;
-    while (result && !result[solidDevtoolsKey]) {
-        result = result.parentNode;
-    }
-    return result as Node & Required<NodeExtra>;
-}
-*/
 
 function findRegisteredDescendantsOrSelf(node: Node & NodeExtra): (Node & Required<NodeExtra>)[] {
     if (node[solidDevtoolsKey]) {
@@ -134,15 +148,10 @@ function findRegisteredNextSiblingOrSelf(node: Node & NodeExtra | null): Node & 
 
 function unregisterDomNode(node: Node & NodeExtra, registry: Registry) {
     registry.unregisterDomNode(node);
-    const next: Node[] = [];
     let c = node.firstChild;
     while (c) {
-        registry.unregisterDomNode(c);
-        next.push(c);
+        unregisterDomNode(c, registry);
         c = c.nextSibling;
-    }
-    for (const n of next) {
-        unregisterDomNode(n, registry);
     }
 }
 

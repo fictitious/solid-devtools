@@ -1,7 +1,8 @@
 import type {Component} from 'solid-js';
-import {Switch, Match, createEffect, onCleanup} from 'solid-js';
+import {Switch, Match, createEffect, createMemo, onCleanup} from 'solid-js';
 
 import type {ConnectionState} from '../connection-state';
+import {createRegistryMirror} from '../data/registry-mirror';
 
 export interface ComponentsPanelProps {
     connectionState: ConnectionState;
@@ -9,19 +10,27 @@ export interface ComponentsPanelProps {
 
 const messages = [
     'componentRendered',
-    'componentGone',
+    'componentDisposed',
     'domNodeRegistered',
-    'domNodeGone',
+    'domNodeRemoved',
     'domNodeAddedResultOf',
     'domNodeIsRoot',
-    'domNodeRootGone',
+    'domNodeRootDisposed',
     'domNodeAppended',
     'domNodeInserted'
 ] as const;
 
 const ComponentsPanel: Component<ComponentsPanelProps> = props => {
+
+    const registryMirror = createMemo(() => createRegistryMirror());
+    createEffect(() => props.connectionState.channel() && registryMirror().subscribe(props.connectionState.channel()!));
+    onCleanup(() => props.connectionState.channel() && registryMirror().unsubscribe(props.connectionState.channel()!));
+
     const reload = () => chrome.devtools.inspectedWindow.reload({});
-    const sendTestMessage = () => props.connectionState.channel()?.send('test-message', {});
+    const testButtonClick = () => {
+        console.log(`registryMirror`, registryMirror());
+        props.connectionState.channel()?.send('test-message', {});
+    };
     let div: HTMLDivElement | undefined;
     const listener = (m: {}) => {
         if (div) {
@@ -63,7 +72,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
                 <p>connecting...</p>
             </Match>
             <Match when={props.connectionState.channelState() === 'connected'}>
-                <button onclick={sendTestMessage}>Send Test Message</button>
+                <button onclick={testButtonClick}>Send Test Message</button>
                 <div ref={div}></div>
             </Match>
         </Switch>

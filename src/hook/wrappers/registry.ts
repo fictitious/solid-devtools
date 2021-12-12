@@ -8,7 +8,7 @@ import type {ComponentItem, ComponentProps} from './types';
 export interface Registry {
     registerComponent(comp: Component, props?: ComponentProps): ComponentItem;
     unregisterComponent(id: string): void;
-    registerComponentResult<R>(result: R, component: ComponentItem): R;
+    registerComponentResult<R>(result: R, index: number[], component: ComponentItem): R;
     registerDomNode(node: Node & NodeExtra): Node & Required<Node & NodeExtra>;
     unregisterDomNode(node: Node & NodeExtra): void;
     registerRoot(node: Node & NodeExtra): void;
@@ -41,10 +41,10 @@ class RegistryImpl implements Registry {
 
     unregisterComponent(id: string): void {
         this.componentMap.delete(id);
-        this.channel.send('componentGone', {id});
+        this.channel.send('componentDisposed', {id});
     }
 
-    registerComponentResult<R>(result: R, component: ComponentItem): R {
+    registerComponentResult<R>(result: R, index: number[], component: ComponentItem): R {
         if (result instanceof Node) {
             const node = this.registerDomNode(result as Node & NodeExtra);
             const nodeExtra = node[solidDevtoolsKey];
@@ -53,7 +53,7 @@ class RegistryImpl implements Registry {
             } else {
                 nodeExtra.resultOf = [component];
             }
-            this.channel.send('domNodeAddedResultOf', {id: nodeExtra.id, resultOf: component.id});
+            this.channel.send('domNodeAddedResultOf', {id: nodeExtra.id, resultOf: component.id, index});
         }
         return result;
     }
@@ -63,6 +63,11 @@ class RegistryImpl implements Registry {
         if (!nodeExtra) {
             const id = newDomNodeId();
             node[solidDevtoolsKey] = {id};
+/*
+if (node instanceof HTMLElement) {
+    node.setAttribute('data-devtools-id', id);
+}
+*/
             this.domNodeMap.set(id, node);
             this.channel.send('domNodeRegistered', {id, nodeType: node.nodeType, name: node.nodeName, value: node.nodeValue});
         }
@@ -91,7 +96,7 @@ class RegistryImpl implements Registry {
             if (!nodeExtra.resultOf) {
                 this.domNodeMap.delete(nodeExtra.id);
             }
-            this.channel.send('domNodeRootGone', {id: nodeExtra.id});
+            this.channel.send('domNodeRootDisposed', {id: nodeExtra.id});
         }
     }
 }
