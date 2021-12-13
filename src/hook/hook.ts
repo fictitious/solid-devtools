@@ -5,6 +5,7 @@ import type {Message} from '../channel/channel';
 import {createChannel} from '../channel/channel';
 import type {BufferedChannel} from '../channel/buffered-channel';
 import {createBufferedChannel} from '../channel/buffered-channel';
+import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from '../devtools-page/storage-keys';
 import type {Registry} from './wrappers/registry';
 import {createRegistry} from './wrappers/registry';
 import {wrapComponent} from './wrappers/component-wrapper';
@@ -29,7 +30,8 @@ class HookImpl extends HookBaseImpl implements HookFull {
         this.channel = createBufferedChannel('page', 5, () => {
             this.deactivate();
         });
-        this.registry = createRegistry(this.channel);
+        const exposeNodeIds = sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY);
+        this.registry = createRegistry(this.channel, !!exposeNodeIds);
 
         this.updateComponentWrappers = [];
         this.updateInsertParentWrappers = [];

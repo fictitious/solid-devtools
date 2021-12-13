@@ -23,13 +23,18 @@
         "matches": ["<all_urls>"]
     }],
     "permissions": [
-        "scripting"
+        "scripting",
+        "storage"
     ],
     "host_permissions": [
         "file:///*",
         "http://*/*",
         "https://*/*"
     ],
+    "options_ui": {
+        "page": "pages/options.html",
+        "open_in_tab": false
+    },
     "action": {
         "default_icon": {
             "16": "icons/solid-gray-16.png",

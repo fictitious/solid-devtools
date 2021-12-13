@@ -1,59 +1,23 @@
 import type {Component} from 'solid-js';
-import {Switch, Match, createEffect, createMemo, onCleanup} from 'solid-js';
+import {Switch, Match} from 'solid-js';
 
 import type {ConnectionState} from '../connection-state';
-import {createRegistryMirror} from '../data/registry-mirror';
+import type {RegistryMirror} from '../data/registry-mirror';
 
 export interface ComponentsPanelProps {
     connectionState: ConnectionState;
+    registryMirror: RegistryMirror;
 }
-
-const messages = [
-    'componentRendered',
-    'componentDisposed',
-    'domNodeRegistered',
-    'domNodeRemoved',
-    'domNodeAddedResultOf',
-    'domNodeIsRoot',
-    'domNodeRootDisposed',
-    'domNodeAppended',
-    'domNodeInserted'
-] as const;
 
 const ComponentsPanel: Component<ComponentsPanelProps> = props => {
 
-    const registryMirror = createMemo(() => createRegistryMirror());
-    createEffect(() => props.connectionState.channel() && registryMirror().subscribe(props.connectionState.channel()!));
-    onCleanup(() => props.connectionState.channel() && registryMirror().unsubscribe(props.connectionState.channel()!));
-
     const reload = () => chrome.devtools.inspectedWindow.reload({});
     const testButtonClick = () => {
-        console.log(`registryMirror`, registryMirror());
+        console.log(`registryMirror`, props.registryMirror);
         props.connectionState.channel()?.send('test-message', {});
     };
-    let div: HTMLDivElement | undefined;
-    const listener = (m: {}) => {
-        if (div) {
-            const e = document.createElement('div');
-            const t = document.createTextNode(JSON.stringify(m));
-            e.appendChild(t);
-            div.appendChild(e);
-        }
-    };
-    createEffect(() => {
-        for (const n of messages) {
-            props.connectionState.channel()?.addListener(n, listener);
-        }
-    });
-    onCleanup(() => {
-        for (const n of messages) {
-            props.connectionState.channel()?.removeListener(n, listener);
-        }
-    });
 
     return <div>
-        <p>hook type: {props.connectionState.hookType()}</p>
-        <p>channel state: {props.connectionState.channelState()}</p>
         <Switch>
             <Match when={props.connectionState.hookType() === 'stub'}>
                 <p>The page was loaded while Solid devtools were not active</p>
@@ -73,7 +37,6 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
             </Match>
             <Match when={props.connectionState.channelState() === 'connected'}>
                 <button onclick={testButtonClick}>Send Test Message</button>
-                <div ref={div}></div>
             </Match>
         </Switch>
     </div>;

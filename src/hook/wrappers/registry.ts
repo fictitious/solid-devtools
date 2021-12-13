@@ -25,7 +25,8 @@ class RegistryImpl implements Registry {
     domNodeMap: Map<string, Node & NodeExtra>;
 
     constructor(
-        public channel: Channel<'page'>
+        public channel: Channel<'page'>,
+        public exposeNodeIds: boolean
     ) {
         this.componentMap = new Map();
         this.domNodeMap = new Map();
@@ -63,11 +64,10 @@ class RegistryImpl implements Registry {
         if (!nodeExtra) {
             const id = newDomNodeId();
             node[solidDevtoolsKey] = {id};
-/*
-if (node instanceof HTMLElement) {
-    node.setAttribute('data-devtools-id', id);
-}
-*/
+            if (this.exposeNodeIds) {
+                (node instanceof HTMLElement) && node.setAttribute('data-devtools-id', id);
+            }
+
             this.domNodeMap.set(id, node);
             this.channel.send('domNodeRegistered', {id, nodeType: node.nodeType, name: node.nodeName, value: node.nodeValue});
         }
@@ -111,8 +111,8 @@ function newDomNodeId(): string {
     return `d-${++nextId}`;
 }
 
-function createRegistry(channel: Channel<'page'>): Registry {
-    return new RegistryImpl(channel);
+function createRegistry(channel: Channel<'page'>, exposeNodeIds: boolean): Registry {
+    return new RegistryImpl(channel, exposeNodeIds);
 }
 
 export {createRegistry, solidDevtoolsKey};

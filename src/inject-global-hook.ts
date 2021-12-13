@@ -8,7 +8,8 @@
 import nullthrows from 'nullthrows';
 
 import type {HookMessage} from './hook/hook-message-types';
-import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './devtools-page/storage-keys';
+import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY, SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from './devtools-page/storage-keys';
+import {loadOptions} from './options/options';
 
 function injectScript(path: string) {
     const script = document.createElement('script');
@@ -38,3 +39,8 @@ if ('text/html' === document.contentType) {
     const panelActivated = sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY);
     injectScript(panelActivated ? '/scripts/hook.js' : '/scripts/hook-stub.js');
 }
+
+void loadOptions()
+.then(options => {
+    sessionStorage.setItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, options.exposeDomNodeIds ? 'true' : '');
+});

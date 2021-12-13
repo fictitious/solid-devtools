@@ -3,10 +3,16 @@
 import {globalHookName} from '../hook/hook-name';
 import type {ChannelMessageFromPage, HelloAnswer} from '../channel/channel-message-types';
 import {createChannel} from '../channel/channel';
-import type {Message} from '../channel/channel';
+import type {Message, Transport} from '../channel/channel';
+import type {Options} from '../options/options';
+import {loadOptions} from '../options/options';
+import type {RegistryMirror} from './data/registry-mirror';
+import {createRegistryMirror} from './data/registry-mirror';
+import type {DebugLog} from './data/debug-log';
+import {createDebugLog} from './data/debug-log';
 import type {ConnectionState, ChannelState} from './connection-state';
 import {createConnectionState} from './connection-state';
-import {createPanel} from './create-panel';
+import {createPanels} from './create-panels';
 
 let connectionState: ConnectionState | undefined;
 
@@ -17,34 +23,44 @@ function createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected: 
             function({solidRegistered = false, hookType = ''}: {solidRegistered?: boolean; hookType?: string} = {}) {
                 if (solidRegistered && !connectionState) {
                     cleanupOnSolidFirstDetected();
-                    connectionState = createConnectionState(hookType === 'full' ? 'full' : 'stub');
-                    createConnection(chrome.devtools.inspectedWindow.tabId);
-                    createPanel(connectionState);
+
+                    void loadOptions()
+                    .then(options => {
+                        connectionState = createConnectionState(hookType === 'full' ? 'full' : 'stub');
+                        const registryMirror = createRegistryMirror();
+                        const debugLog = createDebugLog(options);
+                        createConnection({tabId: chrome.devtools.inspectedWindow.tabId, registryMirror, debugLog, options});
+                        createPanels(connectionState, registryMirror, options, debugLog);
+                    });
                 }
             }
         );
     }
 }
 
-function createConnection(tabId: number): void {
+export interface InitConnector {
+    tabId: number;
+    registryMirror: RegistryMirror;
+    debugLog: DebugLog;
+    options: Options;
+}
 
+function createConnection(p: InitConnector): void {
 
-    initConnector(tabId);
+    initConnector(p);
 
     // reconnect when a new page is loaded.
     chrome.devtools.network.onNavigated.addListener(function onNavigated() {
-        // todo call cleanup here ??
-//                flushSync(() => root.unmount());
 
         // background-relay will disconnect connection from devtools page (the port created here in initConnector)
         // when the port on the content script side is disconnected (on navigation too)
         // so create a new port here
 
-        initConnector(tabId);
+        initConnector(p);
     });
 }
 
-function initConnector(tabId: number) {
+function initConnector({tabId, registryMirror, debugLog, options}: InitConnector): void {
     const port = chrome.runtime.connect({
         name: String(tabId)
     });
@@ -57,6 +73,7 @@ function initConnector(tabId: number) {
             connectionState?.setHookType(message.hookType);
             const channelState = connectedState(message);
             connectionState?.setChannelState(channelState);
+            debugLog.log('debug', `helloAnswer: hookType:${message.hookType} hook.deactivated:${message.deactivated ? 'yes' : 'no'}`);
             if (channelState === 'connected') {
                 initChannel();
             }
@@ -64,7 +81,7 @@ function initConnector(tabId: number) {
         }
     }
     function initChannel() {
-        connectionState?.setChannel(createChannel('devtools', {
+        const transport: Transport = {
             subscribe(fn: (message: Message) => void) {
                 port.onMessage.addListener(fn);
                 return () => port.onMessage.removeListener(fn);
@@ -72,9 +89,18 @@ function initConnector(tabId: number) {
             send(message: Message) {
                 port.postMessage(message);
             }
-        }));
+        };
+        const channel = createChannel('devtools', transport);
+        registryMirror.subscribe(channel);
+        if (options.logAllMessages) {
+            debugLog.subscribe(transport);
+        }
+        connectionState?.setChannel(channel);
     }
     function disconnectListener() {
+        const channel = connectionState?.channel();
+        debugLog.unsubscribe();
+        channel && registryMirror.unsubscribe(channel);
         connectionState?.setChannelState('disconnected');
         connectionState?.setChannel(undefined);
         port.onMessage.removeListener(connectionListener);
