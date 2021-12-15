@@ -23,14 +23,20 @@ class DebugLogRenderer {
     render = (logRecord: LogRecord) => {
         if (this.div) {
             const e = document.createElement('div');
-            e.setAttribute('style', 'width: 100%; padding: 0.2em');
+            let style = 'width: 100%; padding: 0.2em';
             if (logRecord.kind === 'transportMessage') {
                 const t = document.createTextNode(JSON.stringify(logRecord.message));
                 e.appendChild(t);
             } else {
                 const t = document.createTextNode(`${logRecord.type}: ${logRecord.message}`);
                 e.appendChild(t);
+                if (logRecord.type === 'error') {
+                    style += '; color: #b25';
+                } else if (logRecord.type === 'warn') {
+                    style += '; color: #ca0';
+                }
             }
+            e.setAttribute('style', style);
             this.div.appendChild(e);
         }
     };

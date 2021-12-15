@@ -4,6 +4,7 @@ import type {
     ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended
 } from '../../channel/channel-message-types';
 import type {SerializedValue} from '../../channel/serialized-value';
+import type {Logger} from './debug-log';
 
 export type ComponentResultMirror = DomNodeMirror;
 
@@ -38,7 +39,9 @@ class RegistryMirrorImpl {
     rootDomNodes: DomNodeMirror[];
     domNodeMap: Map<string, DomNodeMirror>;
 
-    constructor() {
+    constructor(
+        public logger: Logger
+    ) {
         this.componentMap = new Map();
         this.rootDomNodes = [];
         this.domNodeMap = new Map();
@@ -58,7 +61,7 @@ class RegistryMirrorImpl {
 
     componentRendered = ({id, name, props}: ComponentRendered) => {
         if (this.componentMap.has(id)) {
-            console.error(`RegistryMirror.componentRendered: component is already here. id=${id}`);
+            this.logger('error', `RegistryMirror.componentRendered: component is already here. id=${id}`);
         } else {
             const component: ComponentMirror = {id, name, props, result: []};
             this.componentMap.set(id, component);
@@ -68,7 +71,7 @@ class RegistryMirrorImpl {
     componentDisposed = ({id}: ComponentDisposed) => {
         const component = this.componentMap.get(id);
         if (!component) {
-            console.error(`RegistryMirror.componentDisposed: unknown component id: ${id}`);
+            this.logger('error', `RegistryMirror.componentDisposed: unknown component id: ${id}`);
         } else {
             for (const resultNode of component.result) {
                 const resultIndex = resultNode.resultOf.indexOf(id);
@@ -83,7 +86,7 @@ class RegistryMirrorImpl {
 
     domNodeRegistered = ({id, nodeType, name, value}: DomNodeRegistered) => {
         if (this.domNodeMap.has(id)) {
-            console.error(`RegistryMirror.domNodeRegistered: dom node is already here. id=${id}`);
+            this.logger('error', `RegistryMirror.domNodeRegistered: dom node is already here. id=${id}`);
         } else {
             const node: DomNodeMirror = {id, nodeType, name, value, children: [], resultOf: []};
             this.domNodeMap.set(id, node);
@@ -93,7 +96,7 @@ class RegistryMirrorImpl {
     domNodeRemoved = ({id}: DomNodeRemoved) => {
         const node = this.domNodeMap.get(id);
         if (!node) {
-            console.error(`RegistryMirror.domNodeRemoved: unknown dom node id: ${id}`);
+            this.logger('error', `RegistryMirror.domNodeRemoved: unknown dom node id: ${id}`);
         } else {
             this.removeDomNode(node);
         }
@@ -102,7 +105,7 @@ class RegistryMirrorImpl {
     domNodeIsRoot = ({id}: DomNodeIsRoot) => {
         const node = this.domNodeMap.get(id);
         if (!node) {
-            console.error(`RegistryMirror.domNodeIsRoot: unknown dom node id: ${id}`);
+            this.logger('error', `RegistryMirror.domNodeIsRoot: unknown dom node id: ${id}`);
         } else {
             const rootIndex = this.rootDomNodes.indexOf(node);
             if (rootIndex < 0) {
@@ -115,11 +118,11 @@ class RegistryMirrorImpl {
     domNodeRootDisposed = ({id}: DomNodeRootDisposed) => {
         const node = this.domNodeMap.get(id);
         if (!node) {
-            console.error(`RegistryMirror.domNodeRootDisposed: unknown dom node id: ${id}`);
+            this.logger('error', `RegistryMirror.domNodeRootDisposed: unknown dom node id: ${id}`);
         } else {
             const rootIndex = this.rootDomNodes.indexOf(node);
             if (rootIndex < 0) {
-                console.error(`RegistryMirror.domNodeRootDisposed: dom node is not root. id=${id}`);
+                this.logger('error', `RegistryMirror.domNodeRootDisposed: dom node is not root. id=${id}`);
             } else {
                 this.rootDomNodes.splice(rootIndex, 1);
                 disconnectDomTree(node);
@@ -130,14 +133,14 @@ class RegistryMirrorImpl {
     domNodeAddedResultOf = ({id, resultOf, index}: DomNodeAddedResultOf) => {
         const node = this.domNodeMap.get(id);
         if (!node) {
-            console.error(`RegistryMirror.domNodeAddedResultOf: unknown dom node id: ${id}`);
+            this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown dom node id: ${id}`);
         } else {
             if (index.length > 1) {
-                console.error(`RegistryMirror.domNodeAddedResultOf: multi-level index for node ${id}: this is not expected. index: `, index);
+                this.logger('error', `RegistryMirror.domNodeAddedResultOf: multi-level index for node ${id}: this is not expected. index: ${JSON.stringify(index)}`);
             } else {
                 const component = this.componentMap.get(resultOf);
                 if (!component) {
-                    console.error(`RegistryMirror.domNodeAddedResultOf: unknown component id: ${id}`);
+                    this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown component id: ${id}`);
                 } else {
                     node.resultOf.push(resultOf);
                     component.result[index[0]] = node;
@@ -172,16 +175,16 @@ class RegistryMirrorImpl {
         const prevNode: DomNodeMirror | undefined = prevId ? this.domNodeMap.get(prevId) : undefined;
         const nextNode: DomNodeMirror | undefined = nextId ? this.domNodeMap.get(nextId) : undefined;
         if (prevId && !prevNode) {
-            console.error(`RegistryMirror.domNodeInserted: unknown prev dom node id: ${prevId}`);
+            this.logger('error', `RegistryMirror.domNodeInserted: unknown prev dom node id: ${prevId}`);
         } else if (nextId && !nextNode) {
-            console.error(`RegistryMirror.domNodeInserted: unknown next dom node id: ${nextId}`);
+            this.logger('error', `RegistryMirror.domNodeInserted: unknown next dom node id: ${nextId}`);
         } else {
             const prevIndex = prevNode ? parentNode.children.indexOf(prevNode) : undefined;
             const nextIndex = nextNode ? parentNode.children.indexOf(nextNode) : undefined;
             if (prevNode && prevIndex! < 0) {
-                console.error(`RegistryMirror.domNodeInserted: prev dom node can not be found in parent children: ${prevId!}`);
+                this.logger('error', `RegistryMirror.domNodeInserted: prev dom node can not be found in parent children: ${prevId!}`);
             } else if (nextNode && nextIndex! < 0) {
-                console.error(`RegistryMirror.domNodeInserted: next dom node can not be found in parent children: ${prevId!}`);
+                this.logger('error', `RegistryMirror.domNodeInserted: next dom node can not be found in parent children: ${prevId!}`);
             } else if (prevIndex === undefined && nextIndex === undefined) {
                 index = parentNode.children.length;
             } else {
@@ -201,7 +204,7 @@ class RegistryMirrorImpl {
                 if (index === undefined) {
                     const indexes = `prevIndex, nextIndex: ${prevIndex ?? 'undefined'}, ${nextIndex ?? 'undefined'}`;
                     const ids = `parentNode ${parentNode.id} prevId ${prevId ?? 'undefined'} nextId ${nextId ?? 'undefined'}`;
-                    console.error(`RegistryMirror.domNodeInserted: unexpected ${indexes} for ${ids}`);
+                    this.logger('error', `RegistryMirror.domNodeInserted: unexpected ${indexes} for ${ids}`);
                 }
             }
         }
@@ -211,7 +214,7 @@ class RegistryMirrorImpl {
     findParentChildNodes(operation: string, parentId: string, childIds: string[]): {parentNode?: DomNodeMirror; childNodes: DomNodeMirror[]} {
         const parentNode = this.domNodeMap.get(parentId);
         if (!parentNode) {
-            console.error(`${operation}: unknown parent dom node id: ${parentId}`);
+            this.logger('error', `${operation}: unknown parent dom node id: ${parentId}`);
             return {childNodes: []};
         } else {
             return {parentNode, childNodes:
@@ -221,7 +224,7 @@ class RegistryMirrorImpl {
                     if (node) {
                         return true;
                     } else {
-                        console.error(`${operation}: unknown child dom node id: ${id}`);
+                        this.logger('error', `${operation}: unknown child dom node id: ${id}`);
                         return false;
                     }
                 })
@@ -288,8 +291,8 @@ function disconnectDomTree(node: DomNodeMirror): void {
     }
 }
 
-function createRegistryMirror(): RegistryMirror {
-    return new RegistryMirrorImpl();
+function createRegistryMirror(logger: Logger): RegistryMirror {
+    return new RegistryMirrorImpl(logger);
 }
 
 export {createRegistryMirror};

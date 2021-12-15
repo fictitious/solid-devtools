@@ -5,6 +5,7 @@ import type {Message, Transport} from '../../channel/channel';
 export interface DebugLog {
     attach(renderer: DebugLogRenderer): void;
     log(type: LogDebugMessage['type'], message: string): void;
+    logger(): Logger;
     subscribe(transport: Transport): void;
     unsubscribe(): void;
 }
@@ -22,6 +23,7 @@ export interface LogDebugMessage {
 }
 export type LogRecord = LogTransportMessage | LogDebugMessage;
 
+export type Logger = (type: LogDebugMessage['type'], message: string) => void;
 class DebugLogImpl implements DebugLog {
 
     renderer: DebugLogRenderer | undefined;
@@ -39,6 +41,11 @@ class DebugLogImpl implements DebugLog {
     }
 
     log(type: LogDebugMessage['type'], message: string): void {
+        if (type === 'error') {
+            console.error(message);
+        } else if (type === 'warn') {
+            console.warn(message);
+        }
         this.addRecord({kind: 'debugMessage', type, message});
     }
 
@@ -62,6 +69,10 @@ class DebugLogImpl implements DebugLog {
             this.buffer.push(record);
         }
     }
+
+    logger(): Logger {
+        return (type: LogDebugMessage['type'], message: string) => this.log(type, message);
+    }
 }
 
 class NoDebugLogImpl implements DebugLog {
@@ -69,13 +80,22 @@ class NoDebugLogImpl implements DebugLog {
     attach(_renderer: DebugLogRenderer): void {
     }
 
-    log(_type: LogDebugMessage['type'], _message: string): void {
+    log(type: LogDebugMessage['type'], message: string): void {
+        if (type === 'error') {
+            console.error(message);
+        } else if (type === 'warn') {
+            console.warn(message);
+        }
     }
 
     subscribe(_transport: Transport): void {
     }
 
     unsubscribe(): void {
+    }
+
+    logger(): Logger {
+        return (type: LogDebugMessage['type'], message: string) => this.log(type, message);
     }
 }
 

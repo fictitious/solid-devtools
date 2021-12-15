@@ -27,8 +27,8 @@ function createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected: 
                     void loadOptions()
                     .then(options => {
                         connectionState = createConnectionState(hookType === 'full' ? 'full' : 'stub');
-                        const registryMirror = createRegistryMirror();
                         const debugLog = createDebugLog(options);
+                        const registryMirror = createRegistryMirror(debugLog.logger());
                         createConnection({tabId: chrome.devtools.inspectedWindow.tabId, registryMirror, debugLog, options});
                         createPanels(connectionState, registryMirror, options, debugLog);
                     });
