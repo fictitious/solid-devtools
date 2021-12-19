@@ -5,7 +5,7 @@ import {render} from 'solid-js/web';
 import type {Options} from '../options/options';
 import type {ConnectionState} from './connection-state';
 import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
-import type {RegistryMirror} from './data/registry-mirror';
+import type {RegistryMirror} from './data/registry-mirror-types';
 import type {DebugLog} from './data/debug-log';
 import {ComponentsPanel} from './ui/components-panel';
 import {DebugLogPanel} from './ui/debug-log-panel';

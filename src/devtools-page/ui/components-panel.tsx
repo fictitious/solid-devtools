@@ -2,7 +2,7 @@ import type {Component} from 'solid-js';
 import {Switch, Match} from 'solid-js';
 
 import type {ConnectionState} from '../connection-state';
-import type {RegistryMirror} from '../data/registry-mirror';
+import type {RegistryMirror} from '../data/registry-mirror-types';
 
 export interface ComponentsPanelProps {
     connectionState: ConnectionState;

@@ -6,7 +6,7 @@ import {createChannel} from '../channel/channel';
 import type {Message, Transport} from '../channel/channel';
 import type {Options} from '../options/options';
 import {loadOptions} from '../options/options';
-import type {RegistryMirror} from './data/registry-mirror';
+import type {RegistryMirror} from './data/registry-mirror-types';
 import {createRegistryMirror} from './data/registry-mirror';
 import type {DebugLog} from './data/debug-log';
 import {createDebugLog} from './data/debug-log';

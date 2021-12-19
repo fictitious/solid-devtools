@@ -3,47 +3,23 @@ import type {
     Channel, ChannelMessageFromPage,
     ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended
 } from '../../channel/channel-message-types';
-import type {SerializedValue} from '../../channel/serialized-value';
 import type {Logger} from './debug-log';
-
-export type ComponentResultMirror = DomNodeMirror;
-
-export interface ComponentMirror {
-    id: string;
-    name: string;
-    props: SerializedValue;
-    result: ComponentResultMirror[];
-}
-
-export interface DomNodeMirror {
-    id: string;
-    nodeType: number;
-    name?: string | null;
-    value?: string | null;
-    connected?: boolean;
-    parent?: DomNodeMirror;
-    children: DomNodeMirror[];
-    resultOf: string[];
-}
-
-export interface RegistryMirror {
-    subscribe(channel: Channel<'devtools'>): void;
-    unsubscribe(channel: Channel<'devtools'>): void;
-}
+import type {ComponentMirror, DomNodeMirror, Root, RegistryMirror} from './registry-mirror-types';
+import {connectDomTree, disconnectDomTree, connectedResultAdded, findAndConnectToParentComponent, removeComponentFromTree, removeDomNodeFromComponentResult} from './connect-components';
 
 const registryMessages = ['componentRendered', 'componentDisposed', 'domNodeRegistered', 'domNodeRemoved', 'domNodeIsRoot', 'domNodeRootDisposed', 'domNodeAddedResultOf', 'domNodeAppended', 'domNodeInserted'] as const;
 
 class RegistryMirrorImpl {
 
     componentMap: Map<string, ComponentMirror>;
-    rootDomNodes: DomNodeMirror[];
+    roots: Root[];
     domNodeMap: Map<string, DomNodeMirror>;
 
     constructor(
         public logger: Logger
     ) {
         this.componentMap = new Map();
-        this.rootDomNodes = [];
+        this.roots = [];
         this.domNodeMap = new Map();
     }
 
@@ -63,7 +39,7 @@ class RegistryMirrorImpl {
         if (this.componentMap.has(id)) {
             this.logger('error', `RegistryMirror.componentRendered: component is already here. id=${id}`);
         } else {
-            const component: ComponentMirror = {id, name, props, result: []};
+            const component: ComponentMirror = {id, name, props, result: [], children: []};
             this.componentMap.set(id, component);
         }
     };
@@ -80,6 +56,7 @@ class RegistryMirrorImpl {
                 }
             }
             component.result.length = 0;
+            removeComponentFromTree(this.logger, component);
             this.componentMap.delete(id);
         }
     };
@@ -107,10 +84,14 @@ class RegistryMirrorImpl {
         if (!node) {
             this.logger('error', `RegistryMirror.domNodeIsRoot: unknown dom node id: ${id}`);
         } else {
-            const rootIndex = this.rootDomNodes.indexOf(node);
+            const rootIndex = this.roots.findIndex(r => r.domNode === node);
             if (rootIndex < 0) {
-                this.rootDomNodes.push(node);
-                connectDomTree(node);
+                const components = connectDomTree(this.componentMap, this.logger, node);
+                const root = {domNode: node, components};
+                for (const component of root.components) {
+                    component.parent = {parentKind: 'root', root};
+                }
+                this.roots.push(root);
             }
         }
     };
@@ -120,11 +101,11 @@ class RegistryMirrorImpl {
         if (!node) {
             this.logger('error', `RegistryMirror.domNodeRootDisposed: unknown dom node id: ${id}`);
         } else {
-            const rootIndex = this.rootDomNodes.indexOf(node);
+            const rootIndex = this.roots.findIndex(r => r.domNode === node);
             if (rootIndex < 0) {
                 this.logger('error', `RegistryMirror.domNodeRootDisposed: dom node is not root. id=${id}`);
             } else {
-                this.rootDomNodes.splice(rootIndex, 1);
+                this.roots.splice(rootIndex, 1);
                 disconnectDomTree(node);
             }
         }
@@ -144,6 +125,9 @@ class RegistryMirrorImpl {
                 } else {
                     node.resultOf.push(resultOf);
                     component.result[index[0]] = node;
+                    if (node.connected && !component.parent) {
+                        connectedResultAdded(this.roots, this.componentMap, this.logger, component, node);
+                    }
                 }
             }
         }
@@ -155,6 +139,20 @@ class RegistryMirrorImpl {
         if (parentNode) {
             parentNode.children.push(...childNodes);
             assignParent(parentNode, childNodes);
+            if (parentNode.connected) {
+                const components = childNodes.flatMap(childNode => connectDomTree(this.componentMap, this.logger, childNode));
+                if (components.length) {
+                    findAndConnectToParentComponent({
+                        roots: this.roots,
+                        componentMap: this.componentMap,
+                        logger: this.logger,
+                        parentNode,
+                        components,
+                        prevSiblingIndex: parentNode.children.length - childNodes.length - 1,
+                        nextSiblingIndex:  parentNode.children.length
+                    });
+                }
+            }
         }
     };
 
@@ -166,6 +164,20 @@ class RegistryMirrorImpl {
             if (index !== undefined) {
                 parentNode.children.splice(index, 0, ...childNodes);
                 assignParent(parentNode, childNodes);
+                if (parentNode.connected) {
+                    const components = childNodes.flatMap(childNode => connectDomTree(this.componentMap, this.logger, childNode));
+                    if (components.length) {
+                        findAndConnectToParentComponent({
+                            roots: this.roots,
+                            componentMap: this.componentMap,
+                            logger: this.logger,
+                            parentNode,
+                            components,
+                            prevSiblingIndex: index - 1,
+                            nextSiblingIndex: index + childNodes.length
+                        });
+                    }
+                }
             }
         }
     };
@@ -235,22 +247,16 @@ class RegistryMirrorImpl {
 
     removeDomNode(node: DomNodeMirror): void {
         removeFromChildren(node);
-        const rootIndex = this.rootDomNodes.indexOf(node);
+        const rootIndex = this.roots.findIndex(r => r.domNode === node);
         if (rootIndex >= 0) {
-            this.rootDomNodes.splice(rootIndex, 1);
+            this.roots.splice(rootIndex, 1);
         }
         this.removeDomTree(node);
     }
 
     removeDomTree(node: DomNodeMirror): void {
         this.domNodeMap.delete(node.id);
-        for (const componentId of node.resultOf) {
-            const component = this.componentMap.get(componentId);
-            const resultIndex = component?.result.indexOf(node);
-            if (resultIndex !== undefined && resultIndex >= 0) {
-                component?.result.splice(resultIndex, 1);
-            }
-        }
+        removeDomNodeFromComponentResult(this.componentMap, this.logger, node);
         for (const c of node.children) {
             this.removeDomTree(c);
         }
@@ -264,9 +270,6 @@ class RegistryMirrorImpl {
 function assignParent(parentNode: DomNodeMirror, childNodes: DomNodeMirror[]): void {
     for (const node of childNodes) {
         node.parent = parentNode;
-        if (parentNode.connected) {
-            connectDomTree(node);
-        }
     }
 }
 
@@ -274,20 +277,6 @@ function removeFromChildren(node: DomNodeMirror): void {
     const childIndex = node.parent?.children.indexOf(node);
     if (childIndex !== undefined && childIndex >= 0) {
         node.parent?.children.splice(childIndex, 1);
-    }
-}
-
-function connectDomTree(node: DomNodeMirror): void {
-    node.connected = true;
-    for (const c of node.children) {
-        connectDomTree(c);
-    }
-}
-
-function disconnectDomTree(node: DomNodeMirror): void {
-    delete node.connected;
-    for (const c of node.children) {
-        disconnectDomTree(c);
     }
 }
 
