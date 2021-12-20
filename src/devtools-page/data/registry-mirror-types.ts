@@ -1,6 +1,7 @@
 
 import type {Channel} from '../../channel/channel-message-types';
 import type {SerializedValue} from '../../channel/serialized-value';
+import type {RootData, ComponentData} from './component-data-types';
 
 export type ComponentResultMirror = DomNodeMirror;
 
@@ -12,6 +13,7 @@ export interface ComponentMirror {
     connectedResultIndex?: number;
     parent?: ComponentParent;
     children: ComponentMirror[];
+    componentData: ComponentData;
 }
 
 export type ComponentParent = ComponentParentComponent | ComponentParentRoot;
@@ -22,12 +24,13 @@ export interface ComponentParentComponent {
 
 export interface ComponentParentRoot {
     parentKind: 'root';
-    root: Root;
+    root: RegistryRoot;
 }
 
-export interface Root {
+export interface RegistryRoot {
     domNode: DomNodeMirror;
     components: ComponentMirror[];
+    rootData: RootData;
 }
 
 export interface DomNodeMirror {

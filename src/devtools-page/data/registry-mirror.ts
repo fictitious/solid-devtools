@@ -4,7 +4,9 @@ import type {
     ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended
 } from '../../channel/channel-message-types';
 import type {Logger} from './debug-log';
-import type {ComponentMirror, DomNodeMirror, Root, RegistryMirror} from './registry-mirror-types';
+import type {RootsData} from './component-data-types';
+import {createRoot, createComponent} from './component-data';
+import type {ComponentMirror, DomNodeMirror, RegistryRoot, RegistryMirror} from './registry-mirror-types';
 import {connectDomTree, disconnectDomTree, connectedResultAdded, findAndConnectToParentComponent, removeComponentFromTree, removeDomNodeFromComponentResult} from './connect-components';
 
 const registryMessages = ['componentRendered', 'componentDisposed', 'domNodeRegistered', 'domNodeRemoved', 'domNodeIsRoot', 'domNodeRootDisposed', 'domNodeAddedResultOf', 'domNodeAppended', 'domNodeInserted'] as const;
@@ -12,10 +14,11 @@ const registryMessages = ['componentRendered', 'componentDisposed', 'domNodeRegi
 class RegistryMirrorImpl {
 
     componentMap: Map<string, ComponentMirror>;
-    roots: Root[];
+    roots: RegistryRoot[];
     domNodeMap: Map<string, DomNodeMirror>;
 
     constructor(
+        public rootsData: RootsData,
         public logger: Logger
     ) {
         this.componentMap = new Map();
@@ -35,12 +38,12 @@ class RegistryMirrorImpl {
         }
     }
 
-    componentRendered = ({id, name, props}: ComponentRendered) => {
-        if (this.componentMap.has(id)) {
-            this.logger('error', `RegistryMirror.componentRendered: component is already here. id=${id}`);
+    componentRendered = (p: ComponentRendered) => {
+        if (this.componentMap.has(p.id)) {
+            this.logger('error', `RegistryMirror.componentRendered: component is already here. id=${p.id}`);
         } else {
-            const component: ComponentMirror = {id, name, props, result: [], children: []};
-            this.componentMap.set(id, component);
+            const component = createComponent(p);
+            this.componentMap.set(p.id, component);
         }
     };
 
@@ -87,7 +90,7 @@ class RegistryMirrorImpl {
             const rootIndex = this.roots.findIndex(r => r.domNode === node);
             if (rootIndex < 0) {
                 const components = connectDomTree(this.componentMap, this.logger, node);
-                const root = {domNode: node, components};
+                const root = createRoot(this.rootsData, node, components);
                 for (const component of root.components) {
                     component.parent = {parentKind: 'root', root};
                 }
@@ -293,8 +296,8 @@ function removeFromChildren(node: DomNodeMirror): void {
     }
 }
 
-function createRegistryMirror(logger: Logger): RegistryMirror {
-    return new RegistryMirrorImpl(logger);
+function createRegistryMirror(rootsData: RootsData, logger: Logger): RegistryMirror {
+    return new RegistryMirrorImpl(rootsData, logger);
 }
 
 export {createRegistryMirror};

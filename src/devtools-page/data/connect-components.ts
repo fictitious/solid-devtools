@@ -1,5 +1,7 @@
 
-import type {ComponentMirror, ComponentParent, DomNodeMirror, Root} from './registry-mirror-types';
+import type {ComponentChildrenData} from './component-data-types';
+import {updateChildrenData} from './component-data';
+import type {ComponentMirror, ComponentParent, DomNodeMirror, RegistryRoot} from './registry-mirror-types';
 import type {Logger} from './debug-log';
 
 /*
@@ -54,6 +56,7 @@ function connectNodeResultOf(componentMap: Map<string, ComponentMirror>, logger:
             if (lowerComponent && !lowerComponent.parent) {
                 lowerComponent.parent = {parentKind: 'component', component};
                 component.children.push(lowerComponent);
+                updateChildrenData(component.componentData, component.children);
             }
             lowerComponent = component;
         }
@@ -61,6 +64,7 @@ function connectNodeResultOf(componentMap: Map<string, ComponentMirror>, logger:
     if (parent && result?.top) {
         result.top.parent = {parentKind: 'component', component: parent};
         parent.children.push(result.top);
+        updateChildrenData(parent.componentData, parent.children);
     }
     return result;
 }
@@ -75,7 +79,7 @@ function disconnectDomTree(node: DomNodeMirror): void {
 }
 
 // when a connected node is added to the result of a not yet connected component, connect the component
-function connectedResultAdded(roots: Root[], componentMap: Map<string, ComponentMirror>, logger: Logger, component: ComponentMirror, node: DomNodeMirror, indexInResult: number): void {
+function connectedResultAdded(roots: RegistryRoot[], componentMap: Map<string, ComponentMirror>, logger: Logger, component: ComponentMirror, node: DomNodeMirror, indexInResult: number): void {
     let connectedWithSameResult: ComponentMirror | undefined;
     let i = indexInResult;
     // if there's some already connected component below with the same result, insert between that component and its parent
@@ -91,21 +95,24 @@ function connectedResultAdded(roots: Root[], componentMap: Map<string, Component
         }
     }
     if (connectedWithSameResult) {
-        const parentChildren = getComponentParentChildren(connectedWithSameResult.parent!);
+        const {parentChildren, childrenData} = getComponentParentChildren(connectedWithSameResult.parent!);
         const index = parentChildren.indexOf(component);
         if (index < 0) {
             logger('error', `connectedResultAdded: component ${component.id} is missing from its parent chldren: parent: ${JSON.stringify(connectedWithSameResult)}`);
         } else {
             connectedWithSameResult.parent = {parentKind: 'component', component};
             component.children.push(connectedWithSameResult);
+            updateChildrenData(component.componentData, component.children);
+
             parentChildren[index] = component;
+            updateChildrenData(childrenData, parentChildren);
         }
     } else {
         // if there are some (already connected) components below the node, insert between those components (that have common parent) and their parent
         const belowComponents = node.children.flatMap(c => findConnectedComponentsAtOrBelow(componentMap, logger, c));
         if (belowComponents.length) {
             const belowSameParent = belowComponents.filter(c => haveSameParent(c, belowComponents[0]));
-            const parentChildren = getComponentParentChildren(belowComponents[0].parent!);
+            const {parentChildren, childrenData: parentChildrenData} = getComponentParentChildren(belowComponents[0].parent!);
             const belowSameParentIndices = belowSameParent.map(c => parentChildren.indexOf(c));
             const minIndex = Math.min(...belowSameParentIndices);
             if (minIndex < 0) {
@@ -114,12 +121,15 @@ function connectedResultAdded(roots: Root[], componentMap: Map<string, Component
                 const newParent = {parentKind: 'component', component} as const;
                 belowSameParent.forEach(c => c.parent = newParent);
                 component.children.push(...belowSameParent);
+                updateChildrenData(component.componentData, component.children);
+                // replace the first children which is now below the parent with the parent, remove the rest
                 parentChildren[minIndex] = component;
                 for (let n = 1; n < belowSameParentIndices.length; ++n) {
                     if (belowSameParentIndices[n] != minIndex) {
                         parentChildren.splice(belowSameParentIndices[n], 1);
                     }
                 }
+                updateChildrenData(parentChildrenData, parentChildren);
             }
         } else {
             // find a parent component to connect to
@@ -141,7 +151,7 @@ function connectedResultAdded(roots: Root[], componentMap: Map<string, Component
 }
 
 export interface FindAndConnectToParentComponent {
-    roots: Root[];
+    roots: RegistryRoot[];
     componentMap: Map<string, ComponentMirror>;
     logger: Logger;
     components: ComponentMirror[]; // components to find parent for
@@ -162,13 +172,14 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
         if (!prevSiblingComponent.parent) {
             logger('error', `findAndConnectToParentComponent: found prev sibling which is unexpectedly not connected: prev sibling id=${prevSiblingComponent.id}`);
         } else {
-            const parentComponentChildren = getComponentParentChildren(prevSiblingComponent.parent);
+            const {parentChildren: parentComponentChildren, childrenData} = getComponentParentChildren(prevSiblingComponent.parent);
             const prevSiblingComponentIndex = parentComponentChildren.indexOf(prevSiblingComponent);
             if (prevSiblingComponentIndex < 0) {
                 logger('error', `findAndConnectToParentComponent: found prev sibling which is missing from its parent children: prev sibling id=${prevSiblingComponent.id}`);
             } else {
                 components.forEach(c => c.parent = prevSiblingComponent.parent);
                 parentComponentChildren.splice(prevSiblingComponentIndex + 1, 0, ...components);
+                updateChildrenData(childrenData, parentComponentChildren);
             }
         }
     } else {
@@ -182,13 +193,14 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
             if (!nextSiblingComponent.parent) {
                 logger('error', `findAndConnectToParentComponent: found next sibling which is unexpectedly not connected: next sibling id=${nextSiblingComponent.id}`);
             } else {
-                const parentComponentChildren = getComponentParentChildren(nextSiblingComponent.parent);
+                const {parentChildren: parentComponentChildren, childrenData} = getComponentParentChildren(nextSiblingComponent.parent);
                 const nextSiblingComponentIndex = parentComponentChildren.indexOf(nextSiblingComponent);
                 if (nextSiblingComponentIndex < 0) {
                     logger('error', `findAndConnectToParentComponent: found next sibling which is missing from its parent children: next sibling id=${nextSiblingComponent.id}`);
                 } else {
                     components.forEach(c => c.parent = nextSiblingComponent.parent);
                     parentComponentChildren.splice(nextSiblingIndex, 0, ...components);
+                    updateChildrenData(childrenData, parentComponentChildren);
                 }
             }
         } else {
@@ -215,6 +227,7 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
                 const p = {parentKind: 'component', component: parentComponent} as const;
                 components.forEach(c => c.parent = p);
                 parentComponent.children.splice(0, 0, ...components);
+                updateChildrenData(parentComponent.componentData, parentComponent.children);
             } else {
                 if (!parentNode.parent) {
                     const root = roots.find(r => r.domNode === parentNode);
@@ -228,6 +241,7 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
                         }
                         components.forEach(c => c.parent = {parentKind: 'root', root});
                         root.components.push(...components);
+                        updateChildrenData(root.rootData, root.components);
                     }
                 } else {
                     const index = parentNode.parent.children.indexOf(parentNode);
@@ -254,8 +268,14 @@ function haveSameParent(c1: ComponentMirror, c2: ComponentMirror) {
     }
 }
 
-function getComponentParentChildren(componentParent: ComponentParent): ComponentMirror[] {
-    return componentParent.parentKind === 'component' ? componentParent.component.children : componentParent.root.components;
+function getComponentParentChildren(componentParent: ComponentParent): {childrenData: ComponentChildrenData; parentChildren: ComponentMirror[]} {
+    if (componentParent.parentKind === 'component') {
+        const parent = componentParent.component;
+        return {parentChildren: parent.children, childrenData: parent.componentData};
+    } else {
+        const root = componentParent.root;
+        return {parentChildren: root.components, childrenData: root.rootData};
+    }
 }
 
 function findConnectedComponentsAtOrBelow(componentMap: Map<string, ComponentMirror>, logger: Logger, node: DomNodeMirror): ComponentMirror[] {
@@ -284,12 +304,13 @@ function findConnectedComponentsAtOrBelow(componentMap: Map<string, ComponentMir
 function removeComponentFromTree(logger: Logger, component: ComponentMirror) {
     const parent = component.parent;
     if (parent) {
-        const parentChildren = getComponentParentChildren(parent);
+        const {parentChildren, childrenData} = getComponentParentChildren(parent);
         const index = parentChildren.indexOf(component);
         if (index < 0) {
             logger('error', `removeComponentFromTree: component ${component.id} is missing from its parent chldren: parent: ${JSON.stringify(parent)}`);
         } else {
             parentChildren.splice(index, 1, ...component.children);
+            updateChildrenData(childrenData, parentChildren);
         }
     }
     delete component.parent;
