@@ -75,10 +75,10 @@ function disconnectDomTree(node: DomNodeMirror): void {
 }
 
 // when a connected node is added to the result of a not yet connected component, connect the component
-function connectedResultAdded(roots: Root[], componentMap: Map<string, ComponentMirror>, logger: Logger, component: ComponentMirror, node: DomNodeMirror): void {
+function connectedResultAdded(roots: Root[], componentMap: Map<string, ComponentMirror>, logger: Logger, component: ComponentMirror, node: DomNodeMirror, indexInResult: number): void {
     let connectedWithSameResult: ComponentMirror | undefined;
-    let i = node.resultOf.length - 1; // position of component in node.resultOf (it's just added so it's the last one)
-    // if there's some already connected component with the same result, insert between that component and its parent
+    let i = indexInResult;
+    // if there's some already connected component below with the same result, insert between that component and its parent
     while (i > 0 && !connectedWithSameResult) {
         --i;
         const resultOf = componentMap.get(node.resultOf[i]);
