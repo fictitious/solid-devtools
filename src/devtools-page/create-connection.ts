@@ -52,7 +52,7 @@ function createConnection(p: InitConnector): void {
     // reconnect when a new page is loaded.
     chrome.devtools.network.onNavigated.addListener(function onNavigated() {
 
-        // background-relay will disconnect connection from devtools page (the port created here in initConnector)
+        // background-passthrough will disconnect connection from devtools page (the port created here in initConnector)
         // when the port on the content script side is disconnected (on navigation too)
         // so create a new port here
 

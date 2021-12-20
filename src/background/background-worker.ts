@@ -1,9 +1,9 @@
 
 import type {HookMessage} from '../hook/hook-message-types';
 import {setIconAndPopup} from './action-popup';
-import {createBackgroundRelay} from './background-relay';
+import {createBackgroundPassthrough} from './background-passthrough';
 
-createBackgroundRelay();
+createBackgroundPassthrough();
 
 function isRestrictedBrowserPage(url: string | undefined) {
     return !url || new URL(url).protocol === 'chrome:';

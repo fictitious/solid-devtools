@@ -5,7 +5,7 @@ import type {SerializedValue} from './serialized-value';
 // Types for messages that go through the solid devtools channel - messages exchanged
 // between the devtools agent in the page and the devtools panel.
 // The way the messages go is
-// agent in the solid page <-> relay in content script <-> relay in background workder <-> devtools page/panel
+// agent in the solid page <-> passthrough in content script <-> passthrough in background workder <-> devtools page/panel
 
 function message<Content = {}>(): Content[] {
     return [];

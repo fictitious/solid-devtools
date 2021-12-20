@@ -48,10 +48,10 @@ export default [{
     }
 }, {
     plugins,
-    input: 'src/content-script-relay.ts',
+    input: 'src/content-script-passthrough.ts',
     output: {
         ...commonOutputSettings,
-        file: 'dist/unpacked/scripts/content-script-relay.js'
+        file: 'dist/unpacked/scripts/content-script-passthrough.js'
     }
 }, {
     plugins,

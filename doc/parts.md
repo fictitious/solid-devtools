@@ -4,7 +4,7 @@
 
 The purspose of background wokrer is
 - to update the state of the extension icon (action icon) in the browser toolbar
-- to create the relay for passing messages between devtools page and the content script which runs in the page being debugged
+- to create the passthrough for passing messages between devtools page and the content script which runs in the page being debugged
 
 ## hook
 
@@ -26,10 +26,10 @@ Creates devtools panel to show component tree if solid is detected on the page, 
 
 Runs in every page as early as possible, and injects the script to create the hook in the "javascript on the page" [isolated world](https://developer.chrome.com/docs/extensions/mv3/content_scripts/#isolated_world).
 
-### content-script-relay
+### content-script-passthrough
 
-Creates another relay for passing messages between devtools page and solid js code. The script is executed when the message relay in the background worker accepts the connection from devools page. The script passes messages to/from the solid js code via `window.postMessage()`. 
+Creates another passthrough for passing messages between devtools page and solid js code. The script is executed when the message passthrough in the background worker accepts the connection from devools page. The script passes messages to/from the solid js code via `window.postMessage()`. 
 
 ### on-panel-deactivated
 
-Executed from the background worker relay when devtools page is disconnected. Resets session storage item which is used to detect if solid devtools panel is active or not.
+Executed from the background worker passthrough when devtools page is disconnected. Resets session storage item which is used to detect if solid devtools panel is active or not.

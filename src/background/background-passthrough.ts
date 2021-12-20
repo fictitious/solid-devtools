@@ -7,7 +7,7 @@ interface PortPair {
 
 const ports = Object.create(null) as Record<string, PortPair>;
 
-function createBackgroundRelay(): void {
+function createBackgroundPassthrough(): void {
 
     chrome.runtime.onConnect.addListener(function(port) {
         let tabId: string | undefined;
@@ -17,7 +17,7 @@ function createBackgroundRelay(): void {
             tabId = port.name;
             if (tabId) {
                 from = 'devtools';
-                injectContentScriptRelay(+tabId);
+                injectContentScriptPassthrough(+tabId);
                 port.onDisconnect.addListener(() => injectOnDevtoolsDisconnect(tabId!));
             }
         } else {
@@ -34,15 +34,15 @@ function createBackgroundRelay(): void {
                 pair = ports[tabId] = {};
             }
             pair[from] = port;
-            // setup relay when both are connected
+            // setup passthrough when both are connected
             if (pair.devtools && pair.contentScript) {
-                setupPortRelay(tabId, pair as Required<PortPair>);
+                setupPortPassthrough(tabId, pair as Required<PortPair>);
             }
         }
     });
 }
 
-function setupPortRelay(tabId: string, {devtools, contentScript}: Required<PortPair>): void {
+function setupPortPassthrough(tabId: string, {devtools, contentScript}: Required<PortPair>): void {
     devtools.onMessage.addListener(devtoolsListener);
     devtools.onDisconnect.addListener(shutdown);
     contentScript.onMessage.addListener(contentScriptListener);
@@ -68,8 +68,8 @@ function isNumericEnough(str: string): boolean {
     return `${+str}` === str;
 }
 
-function injectContentScriptRelay(tabId: number) {
-    void chrome.scripting.executeScript({target: {tabId}, files: ['scripts/content-script-relay.js']});
+function injectContentScriptPassthrough(tabId: number) {
+    void chrome.scripting.executeScript({target: {tabId}, files: ['scripts/content-script-passthrough.js']});
 }
 
 // when disconnect was initiated from the devtools side,
@@ -80,4 +80,4 @@ function injectOnDevtoolsDisconnect(tabId: string) {
     }
 }
 
-export {createBackgroundRelay};
+export {createBackgroundPassthrough};
