@@ -99,8 +99,8 @@ function findOrRegisterAncestorOrSelf(
     while (result && !result[solidDevtoolsKey]) {
         lastParent = result;
         if (findSiblings) {
-            findSiblings.prev = findSiblings.prev ?? findRegisteredPrevSiblingOrSelf(result);
-            findSiblings.next = findSiblings.next ?? findRegisteredNextSiblingOrSelf(result);
+            findSiblings.prev = findSiblings.prev ?? findRegisteredPrevSiblingOrSelf(result.previousSibling);
+            findSiblings.next = findSiblings.next ?? findRegisteredNextSiblingOrSelf(result.nextSibling);
         }
         result = result.parentNode;
     }
