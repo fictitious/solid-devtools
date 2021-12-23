@@ -92,7 +92,7 @@ class RegistryMirrorImpl {
                 const components = connectDomTree(this.componentMap, this.logger, node);
                 const root = createRoot(this.rootsData, node, components);
                 for (const component of root.components) {
-                    component.parent = {parentKind: 'root', root};
+                    component.componentParent = {parentKind: 'root', root};
                 }
                 this.roots.push(root);
             }
@@ -144,7 +144,7 @@ class RegistryMirrorImpl {
                     }
                     // TODO handle updates
                     component.result[index[0]] = node;
-                    if (node.connected && !component.parent) {
+                    if (node.connected && !component.componentParent) {
                         connectedResultAdded(this.roots, this.componentMap, this.logger, component, node, indexInResult);
                     }
                 }
