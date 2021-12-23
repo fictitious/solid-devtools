@@ -129,17 +129,20 @@ class RegistryMirrorImpl {
                     // connect-components code assumes that resultOf is sorted according to the component position in the tree from bottom to top
                     // this is maintained here, relying on the component id assigned sequentially as components are rendered
                     // and upper components are rendered before lower, so it's enough to keep it in descending order of component ids (resultOf is an id)
-                    let indexInResult;
-                    if (node.resultOf.length === 0 || resultOf < node.resultOf[node.resultOf.length - 1]) {
-                        node.resultOf.push(resultOf);
-                        indexInResult = node.resultOf.length - 1;
-                    } else {
-                        indexInResult = node.resultOf.length - 1;
-                        while (indexInResult > 0 && resultOf > node.resultOf[indexInResult - 1]) {
-                            --indexInResult;
+                    let indexInResult = node.resultOf.indexOf(resultOf);
+                    if (indexInResult < 0) {
+                        if (node.resultOf.length === 0 || resultOf < node.resultOf[node.resultOf.length - 1]) {
+                            node.resultOf.push(resultOf);
+                            indexInResult = node.resultOf.length - 1;
+                        } else {
+                            indexInResult = node.resultOf.length - 1;
+                            while (indexInResult > 0 && resultOf > node.resultOf[indexInResult - 1]) {
+                                --indexInResult;
+                            }
+                            node.resultOf.splice(indexInResult, 0, resultOf);
                         }
-                        node.resultOf.splice(indexInResult, 0, resultOf);
                     }
+                    // TODO handle updates
                     component.result[index[0]] = node;
                     if (node.connected && !component.parent) {
                         connectedResultAdded(this.roots, this.componentMap, this.logger, component, node, indexInResult);
