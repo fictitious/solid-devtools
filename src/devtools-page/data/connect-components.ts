@@ -16,7 +16,7 @@ import type {Logger} from './debug-log';
 // return top non-connected components from node or below it if there are any
 function connectDomTree(componentMap: Map<string, ComponentMirror>, logger: Logger, node: DomNodeMirror, parentComponent?: ComponentMirror): ComponentMirror[] {
     node.connected = true;
-    const nodeComponents = connectNodeResultOf(componentMap, logger, node, parentComponent);
+    const nodeComponents = node.resultOf.length > 0 ? connectNodeResultOf(componentMap, logger, node, parentComponent) : undefined;
     const childComponents = node.children.flatMap(c => connectDomTree(componentMap, logger, c, nodeComponents?.bottom || parentComponent));
     // nodeComponents && !nodeComponents.top means that top is already connected which means childComponents should already be connected to it via bottom
     return nodeComponents ? nodeComponents.top ? [nodeComponents.top] : [] : childComponents;
@@ -32,39 +32,44 @@ export interface ConnectedResult {
     top?: ComponentMirror;
     bottom: ComponentMirror;
 }
-function connectNodeResultOf(componentMap: Map<string, ComponentMirror>, logger: Logger, node: DomNodeMirror, parent?: ComponentMirror): ConnectedResult | undefined {
+function connectNodeResultOf(componentMap: Map<string, ComponentMirror>, logger: Logger, node: DomNodeMirror, parentComponent?: ComponentMirror): ConnectedResult | undefined {
     let result: ConnectedResult | undefined;
-    let lowerComponent: ComponentMirror | undefined;
-    for (const componentId of node.resultOf) {
-        const component = componentMap.get(componentId);
-        if (!component) {
-            logger('error', `connectNodeResultOf: component id ${componentId} is not found for result node ${node.id}`);
-        } else {
-            if (!result) {
-                result = {bottom: component};
-            }
-            if (!component.componentParent) {
-                component.connectedResultIndex = component.result.indexOf(node);
-                result.top = component;
-                // component.parent will be assigned later, either on the next iteration (lowerComponent)
-                // or before returning from here if parent !== undefined
-                // or in the registry-mirror after returning from connectDomTree
-                // (note that registry-mirror always calls connectDomTree with parent === undefined, then connects the result)
+    if (!node.parent) {
+        // connectDomTree and connectNodeResultOf are always called with node.connected === true, so !node.parent means it's root
+        logger('error', `connetNodeResultOf: connected result node is root: this is unexpected. node id ${node.id}`);
+    } else {
+        let lowerComponent: ComponentMirror | undefined;
+        for (const componentId of node.resultOf) {
+            const component = componentMap.get(componentId);
+            if (!component) {
+                logger('error', `connectNodeResultOf: component id ${componentId} is not found for result node ${node.id}`);
             } else {
-                result.top = undefined;
+                if (!result) {
+                    result = {bottom: component};
+                }
+                if (!component.componentParent) {
+                    component.connectedNodeParentId = node.parent.id;
+                    result.top = component;
+                    // component.parent will be assigned later, either on the next iteration (lowerComponent)
+                    // or before returning from here if parent !== undefined
+                    // or in the registry-mirror after returning from connectDomTree
+                    // (note that registry-mirror always calls connectDomTree with parent === undefined, then connects the result)
+                } else {
+                    result.top = undefined;
+                }
+                if (lowerComponent && !lowerComponent.componentParent) {
+                    lowerComponent.componentParent = {parentKind: 'component', component};
+                    component.children.push(lowerComponent);
+                    updateChildrenData(component.componentData, component.children);
+                }
+                lowerComponent = component;
             }
-            if (lowerComponent && !lowerComponent.componentParent) {
-                lowerComponent.componentParent = {parentKind: 'component', component};
-                component.children.push(lowerComponent);
-                updateChildrenData(component.componentData, component.children);
-            }
-            lowerComponent = component;
         }
-    }
-    if (parent && result?.top) {
-        result.top.componentParent = {parentKind: 'component', component: parent};
-        parent.children.push(result.top);
-        updateChildrenData(parent.componentData, parent.children);
+        if (parentComponent && result?.top) {
+            result.top.componentParent = {parentKind: 'component', component: parentComponent};
+            parentComponent.children.push(result.top);
+            updateChildrenData(parentComponent.componentData, parentComponent.children);
+        }
     }
     return result;
 }
@@ -213,7 +218,7 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
                 if (!resultOf) {
                     logger('error', `findAndConnectToParentComponent: component id ${parentNode.resultOf[i]} is not found for result node ${parentNode.id}`);
                 } else {
-                    if (resultOf.result[resultOf.connectedResultIndex!].parent === parentNode) {
+                    if (resultOf.connectedNodeParentId === parentNode.id) {
                         parentComponent = resultOf;
                     }
                 }
@@ -287,8 +292,7 @@ function findConnectedComponentsAtOrBelow(componentMap: Map<string, ComponentMir
         if (!resultOf) {
             logger('error', `findConnectedComponentsBelow: component id ${node.resultOf[i]} is not found for result node ${node.id}`);
         } else {
-            if (resultOf.result[resultOf.connectedResultIndex!].parent === node.parent) { // note: root node can not really be in resultOf
-                                                                                          // also, result of array access with undefined index is also undefined
+            if (resultOf.connectedNodeParentId !== undefined && resultOf.connectedNodeParentId === node.parent?.id) {
                 component = resultOf;
             }
         }
@@ -314,7 +318,7 @@ function removeComponentFromTree(logger: Logger, component: ComponentMirror) {
         }
     }
     delete component.componentParent;
-    delete component.connectedResultIndex;
+    delete component.connectedNodeParentId;
     component.children.length = 0;
 }
 
@@ -333,15 +337,8 @@ function removeDomNodeFromComponentResult(componentMap: Map<string, ComponentMir
                 logger('error', `removeDomNodeFromComponentResult: component id ${componentId}: result node ${node.id} is missing from component.result`);
             } else {
                 component.result.splice(resultIndex, 1);
-                if (resultIndex === component.connectedResultIndex) {
-                    const newIndex = component.result.findIndex(n => n.connected && n.parent === node.parent);
-                    if (newIndex >= 0) {
-                        component.connectedResultIndex = newIndex;
-                    } else {
-                        delete component.connectedResultIndex;
-                    }
-                } else if (component.connectedResultIndex !== undefined && component.connectedResultIndex > resultIndex) {
-                    --component.connectedResultIndex;
+                if (!component.result.some(n => n.parent?.id === component.connectedNodeParentId)) {
+                    delete component.connectedNodeParentId;
                 }
             }
         }

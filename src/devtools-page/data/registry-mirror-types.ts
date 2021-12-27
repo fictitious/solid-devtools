@@ -10,7 +10,7 @@ export interface ComponentMirror {
     name: string;
     props: SerializedValue;
     result: ComponentResultMirror[];
-    connectedResultIndex?: number;
+    connectedNodeParentId?: string;
     componentParent?: ComponentParent;
     children: ComponentMirror[];
     componentData: ComponentData;
