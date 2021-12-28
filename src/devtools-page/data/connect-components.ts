@@ -328,6 +328,7 @@ function removeComponentFromTree(logger: Logger, component: ComponentMirror) {
         if (index < 0) {
             logger('error', `removeComponentFromTree: component ${component.id} is missing from its parent children: parent: ${JSON.stringify(parent)}`);
         } else {
+            component.children.forEach(c => c.componentParent = parent);
             parentChildren.splice(index, 1, ...component.children);
             updateChildrenData(childrenData, parentChildren);
         }
