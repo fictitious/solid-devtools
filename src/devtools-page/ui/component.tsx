@@ -9,7 +9,7 @@ const ComponentUI: Component<ComponentData> = componentData => {
     const level = componentData.level() ?? 0;
     const indent = 2 *(level - 1);
     return <>
-        <div style={{'padding-left': `${indent}em`}}>{`<${componentData.name}>`}</div>
+        <div style={{'padding-left': `${indent}em`}}>{`<${componentData.name} id="${componentData.id}">`}</div>
         <For each={componentData.getChildren()}>{component =>
             <ComponentUI {...{...component}} />
         }</For>
