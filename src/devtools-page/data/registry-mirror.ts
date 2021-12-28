@@ -124,7 +124,7 @@ class RegistryMirrorImpl {
             } else {
                 const component = this.componentMap.get(resultOf);
                 if (!component) {
-                    this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown component id: ${id}`);
+                    this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown component id: ${resultOf}`);
                 } else {
                     // connect-components code assumes that resultOf is sorted according to the component position in the tree from bottom to top
                     // this is maintained here, relying on the component id assigned sequentially as components are rendered
