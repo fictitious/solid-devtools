@@ -17,6 +17,8 @@ export interface Registry {
 
 const solidDevtoolsKey = Symbol('key for keeping solid devtools data');
 
+
+// TODO: resultOf and isRoot are not really necessary here
 export type NodeExtra = {[solidDevtoolsKey]?: {id: string; resultOf?: ComponentItem[]; isRoot?: true}};
 
 class RegistryImpl implements Registry {

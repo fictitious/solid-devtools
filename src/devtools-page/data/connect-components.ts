@@ -1,7 +1,7 @@
 
 import type {ComponentChildrenData} from './component-data-types';
 import {updateChildrenData} from './component-data';
-import type {ComponentMirror, ComponentParent, DomNodeMirror, RegistryRoot} from './registry-mirror-types';
+import type {ComponentMirror, ComponentResultMirror, ComponentParent, DomNodeMirror, RegistryRoot} from './registry-mirror-types';
 import type {Logger} from './debug-log';
 
 /*
@@ -326,7 +326,7 @@ function removeComponentFromTree(logger: Logger, component: ComponentMirror) {
         const {parentChildren, childrenData} = getComponentParentChildren(parent);
         const index = parentChildren.indexOf(component);
         if (index < 0) {
-            logger('error', `removeComponentFromTree: component ${component.id} is missing from its parent chldren: parent: ${JSON.stringify(parent)}`);
+            logger('error', `removeComponentFromTree: component ${component.id} is missing from its parent children: parent: ${JSON.stringify(parent)}`);
         } else {
             parentChildren.splice(index, 1, ...component.children);
             updateChildrenData(childrenData, parentChildren);
@@ -347,17 +347,39 @@ function removeDomNodeFromComponentResult(componentMap: Map<string, ComponentMir
         if (!component) {
             logger('error', `removeDomNodeFromComponentResult: component id ${componentId} is not found for result node ${node.id}`);
         } else {
-            const resultIndex = component.result.indexOf(node);
-            if (resultIndex < 0) {
+            const {removed} = removeDomNodeFromResultArray(component.result, node);
+            if (!removed) {
                 logger('error', `removeDomNodeFromComponentResult: component id ${componentId}: result node ${node.id} is missing from component.result`);
-            } else {
-                component.result.splice(resultIndex, 1);
-                if (!component.result.some(n => n.parent?.id === component.connectedNodeParentId)) {
-                    delete component.connectedNodeParentId;
-                }
             }
         }
     }
+}
+
+function removeDomNodeFromResultArray(result: ComponentResultMirror[], node: DomNodeMirror): {removed: boolean} {
+    let removed = false;
+    for (const [i, r] of result.entries()) {
+        if (Array.isArray(r)) {
+            const {removed: nestedRemoved} = removeDomNodeFromResultArray(r, node);
+            removed = removed || nestedRemoved;
+            if (r.length === 0) {
+                result[i] = undefined;
+            }
+        } else {
+            if (r === node) {
+                result[i] = undefined;
+                removed = true;
+            }
+        }
+    }
+    // shrink the array to remove undefined values from the end
+    let newLength = result.length;
+    while (newLength > 0 && result[newLength - 1] === undefined) {
+        --newLength;
+    }
+    if (newLength !== result.length) {
+        result.length = newLength;
+    }
+    return {removed};
 }
 
 export {connectDomTree, disconnectDomTree, connectedResultAdded, findAndConnectToParentComponent, removeComponentFromTree, removeDomNodeFromComponentResult};

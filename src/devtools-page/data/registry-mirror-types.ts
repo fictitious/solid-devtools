@@ -3,7 +3,7 @@ import type {Channel} from '../../channel/channel-message-types';
 import type {SerializedValue} from '../../channel/serialized-value';
 import type {RootData, ComponentData} from './component-data-types';
 
-export type ComponentResultMirror = DomNodeMirror;
+export type ComponentResultMirror = DomNodeMirror | ComponentResultMirror[] | undefined;
 
 export interface ComponentMirror {
     id: string;

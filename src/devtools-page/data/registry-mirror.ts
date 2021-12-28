@@ -6,7 +6,7 @@ import type {
 import type {Logger} from './debug-log';
 import type {RootsData} from './component-data-types';
 import {createRoot, createComponent} from './component-data';
-import type {ComponentMirror, DomNodeMirror, RegistryRoot, RegistryMirror} from './registry-mirror-types';
+import type {ComponentMirror, ComponentResultMirror, DomNodeMirror, RegistryRoot, RegistryMirror} from './registry-mirror-types';
 import {connectDomTree, disconnectDomTree, connectedResultAdded, findAndConnectToParentComponent, removeComponentFromTree, removeDomNodeFromComponentResult} from './connect-components';
 
 const registryMessages = ['componentRendered', 'componentDisposed', 'domNodeRegistered', 'domNodeRemoved', 'domNodeIsRoot', 'domNodeRootDisposed', 'domNodeAddedResultOf', 'domNodeAppended', 'domNodeInserted'] as const;
@@ -52,12 +52,7 @@ class RegistryMirrorImpl {
         if (!component) {
             this.logger('error', `RegistryMirror.componentDisposed: unknown component id: ${id}`);
         } else {
-            for (const resultNode of component.result) {
-                const resultIndex = resultNode.resultOf.indexOf(id);
-                if (resultIndex >= 0) {
-                    resultNode.resultOf.splice(resultIndex, 1);
-                }
-            }
+            updateNodesResultOf(component.result, id);
             component.result.length = 0;
             removeComponentFromTree(this.logger, component);
             this.componentMap.delete(id);
@@ -119,34 +114,31 @@ class RegistryMirrorImpl {
         if (!node) {
             this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown dom node id: ${id}`);
         } else {
-            if (index.length > 1) {
-                this.logger('error', `RegistryMirror.domNodeAddedResultOf: multi-level index for node ${id}: this is not expected. index: ${JSON.stringify(index)}`);
+            const component = this.componentMap.get(resultOf);
+            if (!component) {
+                this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown component id: ${resultOf}`);
             } else {
-                const component = this.componentMap.get(resultOf);
-                if (!component) {
-                    this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown component id: ${resultOf}`);
-                } else {
-                    // connect-components code assumes that resultOf is sorted according to the component position in the tree from bottom to top
-                    // this is maintained here, relying on the component id assigned sequentially as components are rendered
-                    // and upper components are rendered before lower, so it's enough to keep it in descending order of component ids (resultOf is an id)
-                    let indexInResult = node.resultOf.indexOf(resultOf);
-                    if (indexInResult < 0) {
-                        if (node.resultOf.length === 0 || resultOf < node.resultOf[node.resultOf.length - 1]) {
-                            node.resultOf.push(resultOf);
-                            indexInResult = node.resultOf.length - 1;
-                        } else {
-                            indexInResult = node.resultOf.length - 1;
-                            while (indexInResult > 0 && resultOf > node.resultOf[indexInResult - 1]) {
-                                --indexInResult;
-                            }
-                            node.resultOf.splice(indexInResult, 0, resultOf);
+                // connect-components code assumes that resultOf is sorted according to the component position in the tree from bottom to top
+                // this is maintained here, relying on the component id assigned sequentially as components are rendered
+                // and upper components are rendered before lower, so it's enough to keep it in descending order of component ids (resultOf is an id)
+                let indexInResult = node.resultOf.indexOf(resultOf);
+                if (indexInResult < 0) {
+                    if (node.resultOf.length === 0 || resultOf < node.resultOf[node.resultOf.length - 1]) {
+                        node.resultOf.push(resultOf);
+                        indexInResult = node.resultOf.length - 1;
+                    } else {
+                        indexInResult = node.resultOf.length - 1;
+                        while (indexInResult > 0 && resultOf > node.resultOf[indexInResult - 1]) {
+                            --indexInResult;
                         }
+                        node.resultOf.splice(indexInResult, 0, resultOf);
                     }
-                    // TODO handle updates
-                    component.result[index[0]] = node;
-                    if (node.connected && !component.componentParent) {
-                        connectedResultAdded(this.roots, this.componentMap, this.logger, component, node, indexInResult);
-                    }
+                }
+
+                updateComponentResult(component, index, node);
+
+                if (node.connected && !component.componentParent) {
+                    connectedResultAdded(this.roots, this.componentMap, this.logger, component, node, indexInResult);
                 }
             }
         }
@@ -296,6 +288,55 @@ function removeFromChildren(node: DomNodeMirror): void {
     const childIndex = node.parent?.children.indexOf(node);
     if (childIndex !== undefined && childIndex >= 0) {
         node.parent?.children.splice(childIndex, 1);
+    }
+}
+
+function updateNodesResultOf(result: ComponentResultMirror[], componentId: string): void {
+    for (const r of result) {
+        if (Array.isArray(r)) {
+            updateNodesResultOf(r, componentId);
+        } else if (r) {
+            const resultIndex = r.resultOf.indexOf(componentId);
+            if (resultIndex >= 0) {
+                r.resultOf.splice(resultIndex, 1);
+            }
+        }
+    }
+}
+
+function updateComponentResult(component: ComponentMirror, multiIndex: number[], node: DomNodeMirror): void {
+    let array = component.result;
+    let index = multiIndex[0];
+    let v = array[index];
+    const removedNodes: DomNodeMirror[] = [];
+    for (let i = 0; i < multiIndex.length - 1; ++i) {
+        if (!Array.isArray(v)) {
+            if (v && v !== node) {
+                removedNodes.push(v);
+            }
+            v = array[index] = [];
+        }
+        array = v;
+        index = multiIndex[i + 1];
+        v = array[index];
+    }
+
+    if (Array.isArray(v)) {
+        collectResultNodes(v, node, removedNodes);
+    } else if (v && v !== node) {
+        removedNodes.push(v);
+    }
+    array[index] = node;
+    updateNodesResultOf(removedNodes, component.id);
+}
+
+function collectResultNodes(result: ComponentResultMirror[], node: DomNodeMirror, nodes: DomNodeMirror[]) {
+    for (const r of result) {
+        if (Array.isArray(r)) {
+            collectResultNodes(r, node, nodes);
+        } else if (r && r !== node) {
+            nodes.push(r);
+        }
     }
 }
 
