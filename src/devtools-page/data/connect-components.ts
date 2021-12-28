@@ -56,6 +56,12 @@ function connectNodeResultOf(componentMap: Map<string, ComponentMirror>, logger:
                     // (note that registry-mirror always calls connectDomTree with parent === undefined, then connects the result)
                 } else {
                     result.top = undefined;
+                    if (component.connectedNodeParentId && component.connectedNodeParentId !== node.parent.id) {
+                        logger(
+                            'error',
+                            `connectNodeResultOf: component id ${componentId} has two results with different parent: this is not expected. result parent ids ${component.connectedNodeParentId} ${node.parent.id}`
+                        );
+                    }
                 }
                 if (lowerComponent && !lowerComponent.componentParent) {
                     lowerComponent.componentParent = {parentKind: 'component', component};
