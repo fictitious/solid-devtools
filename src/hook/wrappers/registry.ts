@@ -3,11 +3,12 @@ import type {Component} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-message-types';
 import {serializeValue} from '../../channel/serialized-value';
-import type {ComponentItem, ComponentProps} from './types';
+import type {ComponentItem, ComponentProps, SolidInstance} from './types';
 
 export interface Registry {
-    registerComponent(comp: Component, props?: ComponentProps): ComponentItem;
+    registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem;
     unregisterComponent(id: string): void;
+    getComponent(id: string): ComponentItem | undefined;
     registerComponentResult<R>(result: R, index: number[], component: ComponentItem): R;
     registerDomNode(node: Node & NodeExtra): Node & Required<Node & NodeExtra>;
     unregisterDomNode(node: Node & NodeExtra): void;
@@ -34,9 +35,10 @@ class RegistryImpl implements Registry {
         this.domNodeMap = new Map();
     }
 
-    registerComponent(comp: Component, props?: ComponentProps): ComponentItem {
+    registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem {
         const id = newComponentId();
-        const componentItem: ComponentItem = {id, comp, name: comp.name, props};
+        const [debugBreak, setDebugBreak] = solidInstance.createSignal(false);
+        const componentItem: ComponentItem = {id, comp, name: comp.name, props, debugBreak, setDebugBreak};
         this.componentMap.set(id, componentItem);
         this.channel.send('componentRendered', {id, name: comp.name, props: serializeValue(props)});
         return componentItem;
@@ -45,6 +47,10 @@ class RegistryImpl implements Registry {
     unregisterComponent(id: string): void {
         this.componentMap.delete(id);
         this.channel.send('componentDisposed', {id});
+    }
+
+    getComponent(id: string): ComponentItem | undefined {
+        return this.componentMap.get(id);
     }
 
     registerComponentResult<R>(result: R, index: number[], component: ComponentItem): R {

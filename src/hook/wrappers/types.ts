@@ -1,8 +1,10 @@
 
-import type {Component} from 'solid-js';
+import type {Component, Accessor, Setter} from 'solid-js';
 
 export interface SolidInstance { // 'renderer' in react devtools
+    createSignal: <T>(value: T, options?: { equals?: false | ((prev: T, next: T) => boolean); name?: string; internal?: boolean }) => [get: Accessor<T>, set: Setter<T>];
     createMemo: <T>(fn: (v?: T) => T, value?: undefined, options?: { equals?: false | ((prev: T, next: T) => boolean); name?: string }) => () => T;
+    untrack: <T>(fn: () => T) => T;
     onCleanup: (fn: () => void) => void;
     buildType: 'development' | 'production';
 }
@@ -14,4 +16,6 @@ export interface ComponentItem {
     comp: Component;
     name: string;
     props?: {};
+    debugBreak: Accessor<boolean>;
+    setDebugBreak: Setter<boolean>;
 }

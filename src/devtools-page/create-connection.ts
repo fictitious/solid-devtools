@@ -74,11 +74,14 @@ function initConnector({tabId, registryMirror, debugLog, options}: InitConnector
         if (message.kind === 'helloAnswer') {
             connectionState?.setHookType(message.hookType);
             const channelState = connectedState(message);
-            connectionState?.setChannelState(channelState);
             debugLog.log('debug', `helloAnswer: hookType:${message.hookType} hook.deactivated:${message.deactivated ? 'yes' : 'no'}`);
             if (channelState === 'connected') {
                 initChannel();
             }
+            // order is important because ChannelContext.Provider is inside the switch on the channelState
+            // so channel state should be set after initChannel() so that when component tree is rendered for the first time, ChannelContext is already set
+            // to avoid making sure that ChannelContext is accessed in reactive context (not sure if such dependency on the order is a good idea though)
+            connectionState?.setChannelState(channelState);
             port.onMessage.removeListener(connectionListener);
         }
     }

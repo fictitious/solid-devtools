@@ -15,6 +15,9 @@ function messages<M extends {[n in string]: {}}>(m: M) {
     return m;
 }
 
+export interface DebugBreak {
+    componentId: string;
+}
 export interface HelloAnswer {
     hookType: HookType;
     deactivated?: boolean;  // true if 'full' hook was deactivated after devtools has disconnected
@@ -69,6 +72,7 @@ export interface DomNodeInserted {
 const fromDevtools = messages({
     hello: message(),
     shutdown: message(),
+    debugBreak: message<DebugBreak>(),
     'test-message': message()
 });
 

@@ -40,6 +40,11 @@ class HookImpl extends HookBaseImpl implements HookFull {
         this.channel.addListener('test-message', () => {
             console.log('test-message', this.registry);
         });
+        this.channel.addListener('debugBreak', ({componentId}) => {
+            const componentItem = this.registry.getComponent(componentId);
+            componentItem?.setDebugBreak(true);
+            setTimeout(() => componentItem?.setDebugBreak(false), 100);
+        });
     }
 
     connectChannel(): void {

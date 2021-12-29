@@ -9,12 +9,20 @@ export type ComponentResult = ReturnType<Component> | (() => ComponentResult) | 
 function wrapComponent(comp: Component, solidInstance: SolidInstance, registry: Registry): (props: Record<string, unknown>) => ComponentResult {
     const wrapper = (props: Record<string, unknown>) => {
 
-        const componentItem: ComponentItem = registry.registerComponent(comp, props);
+        const componentItem: ComponentItem = registry.registerComponent(solidInstance, comp, props);
         solidInstance.onCleanup(() => {
             registry.unregisterComponent(componentItem.id);
         });
 
-        return wrapComponentResult(componentItem, comp(props), undefined, registry);
+        const compMemo = solidInstance.createMemo(() => {
+            const debugBreak = componentItem.debugBreak();
+            return solidInstance.untrack(() => {
+                if (debugBreak) debugger;
+                return comp(props);
+            });
+        });
+
+        return wrapComponentResult(componentItem, compMemo(), undefined, registry);
     };
     wrapper.componentName = comp.name;
     return wrapper;

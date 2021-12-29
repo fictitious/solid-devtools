@@ -6,6 +6,7 @@ import type {ConnectionState} from '../connection-state';
 import type {RootsData} from '../data/component-data-types';
 import type {RegistryMirror} from '../data/registry-mirror-types';
 import {RootUI} from './component';
+import {ChannelContext} from './channel-context';
 
 export interface ComponentsPanelProps {
     connectionState: ConnectionState;
@@ -33,7 +34,9 @@ const ConnectionStateSwitch: Component<{connectionState: ConnectionState}> = pro
             <p>connecting...</p>
         </Match>
         <Match when={props.connectionState.channelState() === 'connected'}>
-            {props.children}
+            <ChannelContext.Provider value={props.connectionState.channel()}>
+                {props.children}
+            </ChannelContext.Provider>
         </Match>
     </Switch>;
 };
