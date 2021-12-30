@@ -1,31 +1,32 @@
 
 import type {Component} from 'solid-js';
 
-import type {Channel} from '../../channel/channel-message-types';
+import type {Channel, DomNodeAppended, DomNodeInserted, RegistryStateMessageNames, RegistryStateMessageNoSerialMap, FromPage} from '../../channel/channel-message-types';
 import {serializeValue} from '../../channel/serialized-value';
-import type {ComponentItem, ComponentProps, SolidInstance} from './types';
+import {solidDevtoolsKey, findRegisteredDescendantsOrSelf} from './node-functions';
+import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from './types';
 
 export interface Registry {
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem;
     unregisterComponent(id: string): void;
-    getComponent(id: string): ComponentItem | undefined;
     registerComponentResult<R>(result: R, index: number[], component: ComponentItem): R;
     registerDomNode(node: Node & NodeExtra): Node & Required<Node & NodeExtra>;
-    unregisterDomNode(node: Node & NodeExtra): void;
+    nodeRemoved(node: Node & NodeExtra): void;
     registerRoot(node: Node & NodeExtra): void;
     unregisterRoot(node: Node & NodeExtra): void;
+    domNodeAppended(p: Omit<DomNodeAppended, 'messageSerial'>): void;
+    domNodeInserted(p: Omit<DomNodeInserted, 'messageSerial'>): void;
+
+    getComponent(id: string): ComponentItem | undefined;
 }
 
-const solidDevtoolsKey = Symbol('key for keeping solid devtools data');
-
-
-// TODO: resultOf and isRoot are not really necessary here
-export type NodeExtra = {[solidDevtoolsKey]?: {id: string; resultOf?: ComponentItem[]; isRoot?: true}};
+export type NodeExtra = {[solidDevtoolsKey]?: NodeExtraData};
 
 class RegistryImpl implements Registry {
 
     componentMap: Map<string, ComponentItem>;
     domNodeMap: Map<string, Node & NodeExtra>;
+    messageSerial: number;
 
     constructor(
         public channel: Channel<'page'>,
@@ -33,6 +34,7 @@ class RegistryImpl implements Registry {
     ) {
         this.componentMap = new Map();
         this.domNodeMap = new Map();
+        this.messageSerial = 0;
     }
 
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem {
@@ -40,13 +42,13 @@ class RegistryImpl implements Registry {
         const [debugBreak, setDebugBreak] = solidInstance.createSignal(false);
         const componentItem: ComponentItem = {id, comp, name: comp.name, props, debugBreak, setDebugBreak};
         this.componentMap.set(id, componentItem);
-        this.channel.send('componentRendered', {id, name: comp.name, props: serializeValue(props)});
+        this.sendRegistryMessage('componentRendered', {id, name: comp.name, props: serializeValue(props)});
         return componentItem;
     }
 
     unregisterComponent(id: string): void {
         this.componentMap.delete(id);
-        this.channel.send('componentDisposed', {id});
+        this.sendRegistryMessage('componentDisposed', {id});
     }
 
     getComponent(id: string): ComponentItem | undefined {
@@ -58,11 +60,11 @@ class RegistryImpl implements Registry {
             const node = this.registerDomNode(result as Node & NodeExtra);
             const nodeExtra = node[solidDevtoolsKey];
             if (nodeExtra.resultOf) {
-                nodeExtra.resultOf.push(component);
+                nodeExtra.resultOf.push(component.id);
             } else {
-                nodeExtra.resultOf = [component];
+                nodeExtra.resultOf = [component.id];
             }
-            this.channel.send('domNodeAddedResultOf', {id: nodeExtra.id, resultOf: component.id, index});
+            this.sendRegistryMessage('domNodeAddedResultOf', {id: nodeExtra.id, resultOf: component.id, index});
         }
         return result;
     }
@@ -77,9 +79,51 @@ class RegistryImpl implements Registry {
             }
 
             this.domNodeMap.set(id, node);
-            this.channel.send('domNodeRegistered', {id, nodeType: node.nodeType, name: node.nodeName, value: node.nodeValue});
+            this.sendRegistryMessage('domNodeRegistered', {id, nodeType: node.nodeType, name: node.nodeName, value: node.nodeValue});
         }
         return node as Node & Required<Node & NodeExtra>;
+    }
+
+    nodeRemoved(node: Node & NodeExtra): void {
+        const rc = findRegisteredDescendantsOrSelf(node);
+        for (const e of rc) {
+            this.sendRegistryMessage('domNodeRemoved', {id: e[solidDevtoolsKey].id});
+        }
+        this.unregisterDomTree(node);
+    }
+
+    registerRoot(node: Node & NodeExtra): void {
+        const nodeExtra = this.registerDomNode(node)[solidDevtoolsKey];
+        nodeExtra.isRoot = true;
+        this.sendRegistryMessage('domNodeIsRoot', {id: nodeExtra.id});
+    }
+
+    unregisterRoot(node: Node & NodeExtra): void {
+        const nodeExtra = node[solidDevtoolsKey];
+        if (nodeExtra) {
+            delete nodeExtra.isRoot;
+            if (!nodeExtra.resultOf) {
+                this.domNodeMap.delete(nodeExtra.id);
+            }
+            this.sendRegistryMessage('domNodeRootDisposed', {id: nodeExtra.id});
+        }
+    }
+
+    domNodeAppended({parentId, childIds}: Omit<DomNodeAppended, 'messageSerial'>): void {
+        this.sendRegistryMessage('domNodeAppended', {parentId, childIds});
+    }
+
+    domNodeInserted({parentId, childIds, prevId, nextId}: Omit<DomNodeInserted, 'messageSerial'>): void {
+        this.sendRegistryMessage('domNodeInserted', {parentId, childIds, prevId, nextId});
+    }
+
+    unregisterDomTree(node: Node & NodeExtra) {
+        this.unregisterDomNode(node);
+        let c = node.firstChild;
+        while (c) {
+            this.unregisterDomTree(c);
+            c = c.nextSibling;
+        }
     }
 
     unregisterDomNode(node: Node & NodeExtra): void {
@@ -91,21 +135,12 @@ class RegistryImpl implements Registry {
         }
     }
 
-    registerRoot(node: Node & NodeExtra): void {
-        const nodeExtra = this.registerDomNode(node)[solidDevtoolsKey];
-        nodeExtra.isRoot = true;
-        this.channel.send('domNodeIsRoot', {id: nodeExtra.id});
+    sendRegistryMessage<N extends RegistryStateMessageNames>(n: N, m: RegistryStateMessageNoSerialMap[N]): void {
+        this.channel.send(n, {...m, messageSerial: this.nextMessageSerial()} as FromPage[N][0]);
     }
 
-    unregisterRoot(node: Node & NodeExtra): void {
-        const nodeExtra = node[solidDevtoolsKey];
-        if (nodeExtra) {
-            delete nodeExtra.isRoot;
-            if (!nodeExtra.resultOf) {
-                this.domNodeMap.delete(nodeExtra.id);
-            }
-            this.channel.send('domNodeRootDisposed', {id: nodeExtra.id});
-        }
+    nextMessageSerial() {
+        return ++this.messageSerial;
     }
 }
 
