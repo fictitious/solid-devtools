@@ -9,7 +9,7 @@ import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from '
 export interface Registry {
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem;
     unregisterComponent(id: string): void;
-    registerComponentResult<R>(result: R, index: number[], component: ComponentItem): R;
+    registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component>;
     registerDomNode(node: Node & NodeExtra): Node & Required<Node & NodeExtra>;
     nodeRemoved(node: Node & NodeExtra): void;
     registerRoot(node: Node & NodeExtra): void;
@@ -40,7 +40,7 @@ class RegistryImpl implements Registry {
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem {
         const id = newComponentId();
         const [debugBreak, setDebugBreak] = solidInstance.createSignal(false);
-        const componentItem: ComponentItem = {id, comp, name: comp.name, props, debugBreak, setDebugBreak};
+        const componentItem: ComponentItem = {id, comp, name: comp.name, props, result: [], debugBreak, setDebugBreak};
         this.componentMap.set(id, componentItem);
         this.sendRegistryMessage('componentRendered', {id, name: comp.name, props: serializeValue(props)});
         return componentItem;
@@ -55,8 +55,8 @@ class RegistryImpl implements Registry {
         return this.componentMap.get(id);
     }
 
-    registerComponentResult<R>(result: R, index: number[], component: ComponentItem): R {
-        if (result instanceof Node) {
+    registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component> {
+        if (result instanceof Node) { // TODO handle primitive types (string / number etc - needs more patching in solid insertParent)
             const node = this.registerDomNode(result as Node & NodeExtra);
             const nodeExtra = node[solidDevtoolsKey];
             if (nodeExtra.resultOf) {
@@ -65,6 +65,20 @@ class RegistryImpl implements Registry {
                 nodeExtra.resultOf = [component.id];
             }
             this.sendRegistryMessage('domNodeAddedResultOf', {id: nodeExtra.id, resultOf: component.id, index});
+            let i = 0;
+            let array = component.result;
+            let si = index[i];
+            let v = array[si];
+            while (i < index.length - 1) {
+                if (!Array.isArray(v)) {
+                    v = array[si] = [];
+                }
+                array = v;
+                si = index[i];
+                v = array[si];
+                ++i;
+            }
+            array[si] = nodeExtra.id;
         }
         return result;
     }
@@ -158,4 +172,4 @@ function createRegistry(channel: Channel<'page'>, exposeNodeIds: boolean): Regis
     return new RegistryImpl(channel, exposeNodeIds);
 }
 
-export {createRegistry, solidDevtoolsKey};
+export {createRegistry};

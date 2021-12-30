@@ -2,8 +2,7 @@
 
 import type {Channel} from '../../channel/channel-message-types';
 import type {Registry, NodeExtra} from './registry';
-import {solidDevtoolsKey} from './registry';
-import {findOrRegisterAncestorOrSelf, findRegisteredDescendantsOrSelf, findRegisteredPrevSiblingOrSelf, findRegisteredNextSiblingOrSelf} from './node-functions';
+import {solidDevtoolsKey, findOrRegisterAncestorOrSelf, findRegisteredDescendantsOrSelf, findRegisteredPrevSiblingOrSelf, findRegisteredNextSiblingOrSelf} from './node-functions';
 
 // intercept and transmit to devtools all operations
 // performed on parent in insertExpression() in the dom-expressions src/client.js
