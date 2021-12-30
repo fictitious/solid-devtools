@@ -4,6 +4,7 @@ import {globalHookName} from '../hook/hook-name';
 import type {ChannelMessageFromPage, HelloAnswer} from '../channel/channel-message-types';
 import {createChannel} from '../channel/channel';
 import type {Message, Transport} from '../channel/channel';
+import {encodePortName} from '../channel/port-name';
 import type {Options} from '../options/options';
 import {loadOptions} from '../options/options';
 import type {RegistryMirror} from './data/registry-mirror-types';
@@ -31,7 +32,14 @@ function createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected: 
                         const rootsData = createRoots();
                         const debugLog = createDebugLog(options);
                         const registryMirror = createRegistryMirror(rootsData, debugLog.logger());
-                        createConnection({tabId: chrome.devtools.inspectedWindow.tabId, registryMirror, debugLog, options});
+                        createConnection({
+                            devtoolsInstanceId: connectionState.devtoolsInstanceId,
+                            previousHookInstanceId: connectionState.previousHookInstanceId,
+                            tabId: chrome.devtools.inspectedWindow.tabId,
+                            registryMirror,
+                            debugLog,
+                            options
+                        });
                         createPanels(connectionState, rootsData, registryMirror, options, debugLog);
                     });
                 }
@@ -41,6 +49,8 @@ function createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected: 
 }
 
 export interface InitConnector {
+    devtoolsInstanceId: string;
+    previousHookInstanceId?: string;
     tabId: number;
     registryMirror: RegistryMirror;
     debugLog: DebugLog;
@@ -62,10 +72,8 @@ function createConnection(p: InitConnector): void {
     });
 }
 
-function initConnector({tabId, registryMirror, debugLog, options}: InitConnector): void {
-    const port = chrome.runtime.connect({
-        name: String(tabId)
-    });
+function initConnector({devtoolsInstanceId, previousHookInstanceId, tabId, registryMirror, debugLog, options}: InitConnector): void {
+    const port = chrome.runtime.connect({name: encodePortName({tabId, devtoolsInstanceId, previousHookInstanceId})});
     port.onDisconnect.addListener(disconnectListener);
     port.onMessage.addListener(connectionListener);
     connectionState?.setChannelState('connecting');
@@ -74,7 +82,13 @@ function initConnector({tabId, registryMirror, debugLog, options}: InitConnector
         if (message.kind === 'helloAnswer') {
             connectionState?.setHookType(message.hookType);
             const channelState = connectedState(message);
-            debugLog.log('debug', `helloAnswer: hookType:${message.hookType} hook.deactivated:${message.deactivated ? 'yes' : 'no'}`);
+            debugLog.log(
+                'debug',
+                `helloAnswer: hookType:${message.hookType} hook.deactivated:${message.deactivated ? 'yes' : 'no'} `
+                + `devtoolsInstanceId:${devtoolsInstanceId} hookInstanceId:${message.hookInstanceId} `
+                + `prev. devtoolsInstanceId in the hook:${message.previousDevtoolsInstanceId ?? 'undefined'} `
+                + `prev. hookInstanceId here:${previousHookInstanceId ?? 'undefined'}`
+            );
             if (channelState === 'connected') {
                 initChannel();
             }

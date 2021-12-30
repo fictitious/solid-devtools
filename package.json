@@ -39,6 +39,7 @@
         "@types/chrome": "0.0.153"
     },
     "dependencies": {
+        "nanoid": "^3.1.30",
         "nullthrows": "^1.1.1",
         "solid-js": "^1.2.2"
     }

@@ -1,5 +1,4 @@
 
-import type {HookType} from '../hook/hook-types';
 import type {SerializedValue} from './serialized-value';
 
 // Types for messages that go through the solid devtools channel - messages exchanged
@@ -14,7 +13,7 @@ function message<Content = {}>(): Content[] {
 function messages<M extends {[n in string]: {}}>(m: M) {
     return m;
 }
-/*
+
 export interface Hello {
     devtoolsInstanceId: string;
     previousHookInstanceId?: string;
@@ -23,16 +22,20 @@ export interface Hello {
 export interface RegistryStateAck {
     messageSerial: number;
 }
-*/
+
 export interface DebugBreak {
     componentId: string;
 }
+
+export type HookType = 'full' | 'stub';
+
 export interface HelloAnswer {
     hookType: HookType;
     deactivated?: boolean;  // true if 'full' hook was deactivated after devtools has disconnected
-//    hookInstanceId: string;
-//    previousDevtoolsInstanceId: string;
+    hookInstanceId: string;
+    previousDevtoolsInstanceId?: string;
 }
+
 
 export interface RegistryStateMessageBase {
     messageSerial: number;
@@ -84,9 +87,9 @@ export interface DomNodeInserted extends RegistryStateMessageBase {
 }
 
 const fromDevtools = messages({
-    hello: message/*<Hello>*/(),
+    hello: message<Hello>(),
     shutdown: message(),
-//    registryStateAck: message<RegistryStateAck>(),
+    registryStateAck: message<RegistryStateAck>(),
     debugBreak: message<DebugBreak>(),
     'test-message': message()
 });

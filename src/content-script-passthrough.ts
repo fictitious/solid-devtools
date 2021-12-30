@@ -11,8 +11,6 @@ port.onMessage.addListener(message => window.postMessage(message, '*'));
 port.onDisconnect.addListener(handleDisconnect);
 
 window.addEventListener('message', handleMessageFromPage);
-window.postMessage(messageFromDevtools('hello', {}), '*');
-
 
 function handleMessageFromPage(e: MessageEvent<ChannelMessageFromPage>) {
     if (e.source === window && e.data?.category === 'solid-devtools-channel') {

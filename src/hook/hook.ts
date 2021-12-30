@@ -1,6 +1,6 @@
-// script to inject into the page when solid devtools panel is open
+import {nanoid} from 'nanoid';
 
-import type {ChannelMessageFromDevtools} from '../channel/channel-message-types';
+import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import type {Message} from '../channel/channel';
 import {createChannel} from '../channel/channel';
 import type {BufferedChannel} from '../channel/buffered-channel';
@@ -10,15 +10,18 @@ import type {Registry} from './registry/registry';
 import {createRegistry} from './registry/registry';
 import {wrapComponent} from './registry/component-wrapper';
 import {createInsertParentWrapper} from './registry/insert-parent-wrapper';
-import type {HookFull, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
+import type {HookBase, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-base';
 import {HookBaseImpl, installHook} from './hook-base';
 
-class HookImpl extends HookBaseImpl implements HookFull {
+// this is the script to inject into the page when solid devtools panel is open
 
-    hookType: 'full';
+class HookImpl extends HookBaseImpl implements HookBase {
 
+    hookInstanceId: string;
+    previousDevtoolsInstanceId?: string;
     channel: BufferedChannel<'page'>;
     registry: Registry;
+    deactivated?: boolean;
 
     updateComponentWrappers: ((newWrapper: HookComponentWrapper) => void)[];
     updateInsertParentWrappers: ((newWrapper: HookInsertParentWrapper) => void)[];
@@ -26,7 +29,7 @@ class HookImpl extends HookBaseImpl implements HookFull {
 
     constructor() {
         super();
-        this.hookType = 'full';
+        this.hookInstanceId = nanoid();
         this.channel = createBufferedChannel('page', 5, () => {
             this.deactivate();
         });
@@ -47,7 +50,7 @@ class HookImpl extends HookBaseImpl implements HookFull {
         });
     }
 
-    connectChannel(): void {
+    connectChannel({devtoolsInstanceId, previousHookInstanceId}: Hello): HelloAnswer {
         this.channel.connect(createChannel('page', {
             subscribe(fn: (message: Message) => void) {
                 const listener = ({data, source}: MessageEvent<ChannelMessageFromDevtools | undefined>) => {
@@ -62,6 +65,14 @@ class HookImpl extends HookBaseImpl implements HookFull {
                 window.postMessage(message);
             }
         }));
+        const helloAnswer: HelloAnswer = {
+            hookType: 'full',
+            deactivated: this.deactivated,
+            hookInstanceId: this.hookInstanceId,
+            previousDevtoolsInstanceId: this.previousDevtoolsInstanceId
+        };
+        this.previousDevtoolsInstanceId = devtoolsInstanceId;
+        return helloAnswer;
     }
 
     getComponentWrapper(updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper {

@@ -1,16 +1,28 @@
 
+import type {Component} from 'solid-js';
+
 import type {SolidInstance} from './registry/types';
-import type {HookType, HookBase, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
-import type {Channel, ChannelMessageFromDevtools} from '../channel/channel-message-types';
+import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import {messageFromPage} from '../channel/channel-message-types';
 import {globalHookName} from './hook-name';
 
-abstract class HookBaseImpl implements HookBase {
+export type HookComponentWrapper = (c: Component) => Component;
+export type HookInsertParentWrapper = (p: Node) => {};
+export type HookRegisterRoot = (r: Node) => () => void;
 
-    abstract hookType: 'full' | 'stub';
-    abstract channel: Channel<'page'>;
-    deactivated?: boolean;
+export interface HookBase {
+    solidInstance?: SolidInstance;
+    registerSolidInstance(solidInstance: SolidInstance): void;
+    connectChannel(m: Hello): HelloAnswer;
+    getComponentWrapper(updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper;
+    getInsertParentWrapper(updateWrapper: (newWrapper: HookInsertParentWrapper) => void): HookInsertParentWrapper;
+    getRegisterRoot(updateRegisterRoot: (newRegisterRoot: HookRegisterRoot) => void): HookRegisterRoot;
+}
+
+// 'stub' hook implementation to inject into the page when solid devtools panel is not open
+class HookBaseImpl implements HookBase {
+
     solidInstance: SolidInstance | undefined;
 
     registerSolidInstance(solidInstance: SolidInstance): void {
@@ -24,7 +36,11 @@ abstract class HookBaseImpl implements HookBase {
         }
     }
 
-    connectChannel(): void {
+    connectChannel(_: Hello): HelloAnswer {
+        return {
+            hookType: 'stub',
+            hookInstanceId: ''
+        };
     }
 
     getComponentWrapper(_updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper {
@@ -48,15 +64,12 @@ function installHook(target: {}, hook: HookBase): void {
         enumerable: false,
         get() { return hook }
     });
-    window.addEventListener('message', onHelloMessage(hook.hookType));
+    window.addEventListener('message', onHelloMessage);
 
-    function onHelloMessage(hookType: HookType) {
-        return handler;
-        function handler(e: MessageEvent<ChannelMessageFromDevtools>) {
-            if (e.source === window && e.data?.category === 'solid-devtools-channel' && e.data?.kind === 'hello') {
-                window.postMessage(messageFromPage('helloAnswer', {hookType, deactivated: hook.deactivated}), '*');
-                hook.connectChannel();
-            }
+    function onHelloMessage(e: MessageEvent<ChannelMessageFromDevtools>) {
+        if (e.source === window && e.data?.category === 'solid-devtools-channel' && e.data?.kind === 'hello') {
+            const helloAnswer = hook.connectChannel(e.data);
+            window.postMessage(messageFromPage('helloAnswer', helloAnswer));
         }
     }
 }

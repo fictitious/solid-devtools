@@ -1,15 +1,18 @@
 
 
+import {nanoid} from 'nanoid';
 import {createSignal} from 'solid-js';
 import type {Accessor, Setter} from 'solid-js';
 
-import type {HookType} from '../hook/hook-types';
-import type {Channel} from '../channel/channel-message-types';
+import type {Channel, HookType} from '../channel/channel-message-types';
 
 // connected-incapable is when it's connected to the stub hook, or re-connected to the full hook which was deactivated
 export type ChannelState = 'connecting' | 'connected' | 'connected-incapable' | 'disconnected';
 
 export interface ConnectionState {
+    devtoolsInstanceId: string;
+    previousHookInstanceId?: string;
+
     hookType: Accessor<HookType>;
     setHookType: Setter<HookType>;
 
@@ -21,11 +24,12 @@ export interface ConnectionState {
 }
 
 function createConnectionState(initialHookType: HookType): ConnectionState {
+    const devtoolsInstanceId = nanoid();
     const [hookType, setHookType] = createSignal(initialHookType);
     const [channelState, setChannelState] = createSignal<ChannelState>('connecting');
     const [channel, setChannel] = createSignal<Channel<'devtools'> | undefined>(undefined);
 
-    return {hookType, setHookType, channelState, setChannelState, channel, setChannel};
+    return {devtoolsInstanceId, hookType, setHookType, channelState, setChannelState, channel, setChannel};
 }
 
 export {createConnectionState};

@@ -1,71 +1,87 @@
+
+import {decodePortName} from '../channel/port-name';
+import {messageFromDevtools} from '../channel/channel-message-types';
+
 // based on doublePipe() in background.js from React Devtools
 
-interface PortPair {
-    devtools?: chrome.runtime.Port;
-    contentScript?: chrome.runtime.Port;
+interface PassthroughPorts {
+    devtoolsPort?: chrome.runtime.Port;
+    contentScriptPort?: chrome.runtime.Port;
+}
+interface Passthrough extends PassthroughPorts {
+    helloData?: {
+        devtoolsInstanceId: string;
+        previousHookInstanceId?: string;
+    };
 }
 
-const ports = Object.create(null) as Record<string, PortPair>;
+const passthroughs = Object.create(null) as Record<string, Passthrough>;
 
 function createBackgroundPassthrough(): void {
 
     chrome.runtime.onConnect.addListener(function(port) {
         let tabId: string | undefined;
-        let from: keyof PortPair | undefined;
-        if (isNumericEnough(port.name)) {
+        let from: keyof PassthroughPorts | undefined;
+        const portName = decodePortName(port.name);
+        if (portName) {
             // connect from devtools page
-            tabId = port.name;
-            if (tabId) {
-                from = 'devtools';
-                injectContentScriptPassthrough(+tabId);
-                port.onDisconnect.addListener(() => injectOnDevtoolsDisconnect(tabId!));
-            }
+            tabId = portName.tabId.toString();
+            from = 'devtoolsPort';
+            injectContentScriptPassthrough(portName.tabId);
+            port.onDisconnect.addListener(() => injectOnDevtoolsDisconnect(tabId!));
         } else {
             // connect from content script
             const senderTabId = port.sender?.tab?.id;
             if (senderTabId) {
                 tabId = senderTabId.toString();
-                from = 'contentScript';
+                from = 'contentScriptPort';
             }
         }
         if (tabId && from) {
-            let pair = ports[tabId];
-            if (!pair) {
-                pair = ports[tabId] = {};
+            let ps = passthroughs[tabId];
+            if (!ps) {
+                ps = passthroughs[tabId] = {};
             }
-            pair[from] = port;
-            // setup passthrough when both are connected
-            if (pair.devtools && pair.contentScript) {
-                setupPortPassthrough(tabId, pair as Required<PortPair>);
+            if (portName) {
+                ps.helloData = {
+                    devtoolsInstanceId: portName.devtoolsInstanceId,
+                    previousHookInstanceId: portName.previousHookInstanceId
+                };
+            }
+            ps[from] = port;
+            // setup message passthrough when both sides are connected
+            // note that the devtools side is always the first to connect
+            // (the content script side connects from the script injected by injectContentScriptPassthrough here)
+            // and it provides helloData in the port name
+            if (ps.devtoolsPort && ps.contentScriptPort) {
+                setupMessagePassthrough(tabId, ps as Required<Passthrough>);
             }
         }
     });
 }
 
-function setupPortPassthrough(tabId: string, {devtools, contentScript}: Required<PortPair>): void {
-    devtools.onMessage.addListener(devtoolsListener);
-    devtools.onDisconnect.addListener(shutdown);
-    contentScript.onMessage.addListener(contentScriptListener);
-    contentScript.onDisconnect.addListener(shutdown);
+function setupMessagePassthrough(tabId: string, {devtoolsPort, contentScriptPort, helloData}: Required<Passthrough>): void {
+    devtoolsPort.onMessage.addListener(devtoolsListener);
+    devtoolsPort.onDisconnect.addListener(shutdown);
+    contentScriptPort.onMessage.addListener(contentScriptListener);
+    contentScriptPort.onDisconnect.addListener(shutdown);
+
+    contentScriptPort.postMessage(messageFromDevtools('hello', helloData));
+
     function devtoolsListener(message: unknown) {
-        contentScript.postMessage(message);
+        contentScriptPort.postMessage(message);
     }
     function contentScriptListener(message: unknown) {
-        devtools.postMessage(message);
+        devtoolsPort.postMessage(message);
     }
     function shutdown() {
-        delete ports[tabId]; // this avoids executing on-panel-deactivated.js script
+        delete passthroughs[tabId]; // this avoids executing on-panel-deactivated.js script
                             // when disconnect was initiated from the content script side
-        devtools.onMessage.removeListener(devtoolsListener);
-        contentScript.onMessage.removeListener(contentScriptListener);
-        devtools.disconnect();
-        contentScript.disconnect();
+        devtoolsPort.onMessage.removeListener(devtoolsListener);
+        contentScriptPort.onMessage.removeListener(contentScriptListener);
+        devtoolsPort.disconnect();
+        contentScriptPort.disconnect();
     }
-}
-
-// not exactly isNumeric but good enough for tab ids
-function isNumericEnough(str: string): boolean {
-    return `${+str}` === str;
 }
 
 function injectContentScriptPassthrough(tabId: number) {
@@ -75,7 +91,7 @@ function injectContentScriptPassthrough(tabId: number) {
 // when disconnect was initiated from the devtools side,
 // execute script to remove 'devtools panel active' session storage item
 function injectOnDevtoolsDisconnect(tabId: string) {
-    if (ports[tabId]) {
+    if (passthroughs[tabId]) {
         void chrome.scripting.executeScript({target: {tabId: +tabId}, files: ['scripts/on-panel-deactivated.js']});
     }
 }
