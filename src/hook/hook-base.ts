@@ -1,5 +1,5 @@
 
-import type {SolidInstance} from './wrappers/types';
+import type {SolidInstance} from './registry/types';
 import type {HookType, HookBase, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {Channel, ChannelMessageFromDevtools} from '../channel/channel-message-types';

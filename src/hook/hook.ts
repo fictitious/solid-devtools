@@ -6,10 +6,10 @@ import {createChannel} from '../channel/channel';
 import type {BufferedChannel} from '../channel/buffered-channel';
 import {createBufferedChannel} from '../channel/buffered-channel';
 import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from '../devtools-page/storage-keys';
-import type {Registry} from './wrappers/registry';
-import {createRegistry} from './wrappers/registry';
-import {wrapComponent} from './wrappers/component-wrapper';
-import {createInsertParentWrapper} from './wrappers/insert-parent-wrapper';
+import type {Registry} from './registry/registry';
+import {createRegistry} from './registry/registry';
+import {wrapComponent} from './registry/component-wrapper';
+import {createInsertParentWrapper} from './registry/insert-parent-wrapper';
 import type {HookFull, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
 import {HookBaseImpl, installHook} from './hook-base';
 

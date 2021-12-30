@@ -2,7 +2,7 @@
 import type {Component} from 'solid-js';
 
 import type {Channel} from '../channel/channel-message-types';
-import type {SolidInstance} from './wrappers/types';
+import type {SolidInstance} from './registry/types';
 
 export type HookComponentWrapper = (c: Component) => Component;
 export type HookInsertParentWrapper = (p: Node) => {};
