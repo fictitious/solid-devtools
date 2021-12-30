@@ -11,7 +11,7 @@ export type HookComponentWrapper = (c: Component) => Component;
 export type HookInsertParentWrapper = (p: Node) => {};
 export type HookRegisterRoot = (r: Node) => () => void;
 
-export interface HookBase {
+export interface Hook {
     solidInstance?: SolidInstance;
     registerSolidInstance(solidInstance: SolidInstance): void;
     connectChannel(m: Hello): HelloAnswer;
@@ -21,7 +21,7 @@ export interface HookBase {
 }
 
 // 'stub' hook implementation to inject into the page when solid devtools panel is not open
-class HookBaseImpl implements HookBase {
+class HookBaseImpl implements Hook {
 
     solidInstance: SolidInstance | undefined;
 
@@ -56,7 +56,7 @@ class HookBaseImpl implements HookBase {
     }
 }
 
-function installHook(target: {}, hook: HookBase): void {
+function installHook(target: {}, hook: Hook): void {
     if (target.hasOwnProperty(globalHookName)) {
         return undefined;
     }

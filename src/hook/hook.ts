@@ -10,12 +10,12 @@ import type {Registry} from './registry/registry';
 import {createRegistry} from './registry/registry';
 import {wrapComponent} from './registry/component-wrapper';
 import {createInsertParentWrapper} from './registry/insert-parent-wrapper';
-import type {HookBase, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-base';
+import type {Hook, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-base';
 import {HookBaseImpl, installHook} from './hook-base';
 
 // this is the script to inject into the page when solid devtools panel is open
 
-class HookImpl extends HookBaseImpl implements HookBase {
+class HookImpl extends HookBaseImpl implements Hook {
 
     hookInstanceId: string;
     previousDevtoolsInstanceId?: string;
