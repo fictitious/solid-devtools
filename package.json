@@ -8,7 +8,7 @@
     "scripts": {
         "eslint": "eslint --ignore-path .gitignore .",
         "eslint-fix-formatting": "eslint --ignore-path .gitignore --no-eslintrc --config .eslintrc.formatting.json --fix .",
-        "eslint-fix-html": "",
+        "check-type-imports": "! grep -r --include '*.ts' --include '*.tsx' --exclude-dir node_modules '^import type' | grep -v 'solid-js' | grep -v -- \"-types';$\"",
         "build": "npm-run-all clean -p build:*",
         "watch": "npm-run-all clean -l -p watch:*",
         "build:pages": "vite build",
