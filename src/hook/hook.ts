@@ -1,7 +1,8 @@
 import {nanoid} from 'nanoid';
 
-import type {Channel, ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
-import type {Message} from '../channel/channel';
+import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
+import type {Message} from '../channel/channel-transport-types';
+import type {Channel} from '../channel/channel-types';
 import {createChannel} from '../channel/channel';
 import {canReconnect} from '../channel/can-reconnect';
 import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from '../devtools-page/storage-keys';

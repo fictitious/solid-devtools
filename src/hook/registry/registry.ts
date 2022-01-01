@@ -1,7 +1,8 @@
 
 import type {Component} from 'solid-js';
 
-import type {Channel, DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
+import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
+import type {Channel} from '../../channel/channel-types';
 import {serializeValue} from '../../channel/serialized-value';
 import {solidDevtoolsKey, findRegisteredDescendantsOrSelf} from './node-functions';
 import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from './types';

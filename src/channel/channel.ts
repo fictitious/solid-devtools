@@ -1,16 +1,8 @@
 // based on bridge.js from React Devtools
 
+import type {Message, Transport} from './channel-transport-types';
+import type {Channel} from './channel-types';
 import {EventEmitterImpl} from './event-emitter';
-import type {Channel} from './channel-message-types';
-
-export interface Message {
-    kind: string;
-}
-
-export interface Transport {
-    subscribe(fn: (message: Message) => void): () => void;
-    send(message: Message): void;
-}
 
 const BATCH_DURATION_MILLISECONDS = 100;
 

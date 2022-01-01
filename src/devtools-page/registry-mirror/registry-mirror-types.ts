@@ -1,6 +1,6 @@
 
 import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
-import type {SerializedValue} from '../../channel/serialized-value';
+import type {SerializedValue} from '../../channel/channel-transport-types';
 import type {RootData, ComponentData} from '../data/component-data-types';
 
 export type ComponentResultMirror = DomNodeMirror | ComponentResultMirror[] | undefined;

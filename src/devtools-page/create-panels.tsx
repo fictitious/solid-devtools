@@ -7,7 +7,7 @@ import type {ConnectionState} from './connection/connection-state-type';
 import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
 import type {RootsData} from './data/component-data-types';
 import type {RegistryMirror} from './registry-mirror/registry-mirror-types';
-import type {DebugLog} from './data/debug-log';
+import type {DebugLog} from './data/logger-types';
 import {ComponentsPanel} from './ui/components-panel';
 import {DebugLogPanel} from './ui/debug-log-panel';
 

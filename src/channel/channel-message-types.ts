@@ -1,6 +1,6 @@
 
 import type {NodeExtraData, ComponentItemBase} from '../hook/registry/types';
-import type {SerializedValue} from './serialized-value';
+import type {SerializedValue} from './channel-transport-types';
 
 // Types for messages that go through the solid devtools channel - messages exchanged
 // between the devtools agent in the page and the devtools panel.
@@ -162,19 +162,5 @@ export type RegistrySnapshotMessage = RegistrySnapshotMessageMap[keyof RegistryS
 
 export type RegistrySnapshotMessageWithKindMap = {[K in RegistrySnapshotMessageNames]: {kind: K} & FromPage[K][0]};
 export type RegistrySnapshotMessageWithKind = RegistrySnapshotMessageWithKindMap[keyof RegistrySnapshotMessageWithKindMap];
-
-export type Channel<Side extends 'devtools' | 'page'> =
-    Side extends 'devtools' ? {
-        send<K extends keyof FromDevtools>(kind: K, content: FromDevtools[K][0]): void;
-        addListener<K extends keyof FromPage>(kind: K, listener: (msg: ChannelMessageFromPageMap[K]) => void): void;
-        removeListener<K extends keyof FromPage>(kind: K, listener: (msg: ChannelMessageFromPageMap[K]) => void): void;
-        shutdown(): void;
-    } : {
-        send<K extends keyof FromPage>(kind: K, content: FromPage[K][0]): void;
-        addListener<K extends keyof FromDevtools>(kind: K, listener: (msg: ChannelMessageFromDevtoolsMap[K]) => void): void;
-        removeListener<K extends keyof FromDevtools>(m: K, listener: (msg: ChannelMessageFromDevtoolsMap[K]) => void): void;
-        shutdown(): void;
-    }
-;
 
 export {messageFromDevtools, messageFromPage, registryStateMessageNames, registrySnapshotMessageNames};

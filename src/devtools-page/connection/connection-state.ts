@@ -4,11 +4,12 @@ import {nanoid} from 'nanoid';
 import type {Accessor, Setter} from 'solid-js';
 import {createSignal} from 'solid-js';
 
-import type {Transport, Message} from '../../channel/channel';
+import type {Transport, Message} from '../../channel/channel-transport-types';
+import type {HelloAnswer, HookType, ChannelMessageFromPage} from '../../channel/channel-message-types';
+import type {Channel} from '../../channel/channel-types';
 import {canReconnect} from '../../channel/can-reconnect';
 import {encodePortName} from '../../channel/port-name';
-import type {Channel, HelloAnswer, HookType, ChannelMessageFromPage} from '../../channel/channel-message-types';
-import type {Logger} from '../data/debug-log';
+import type {Logger} from '../data/logger-types';
 import type {ConnectionState, ChannelState} from './connection-state-type';
 
 class ConnectionStateImpl implements ConnectionState {

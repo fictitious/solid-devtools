@@ -1,5 +1,5 @@
 
-import type {SerializedValue} from '../../channel/serialized-value';
+import type {SerializedValue} from '../../channel/channel-transport-types';
 import type {RegistryRoot, ComponentMirror, ComponentParent, ComponentResultMirror, DomNodeMirror} from './registry-mirror-types';
 
 function stringify(o: ComponentParent | DomNodeMirror | RegistryRoot): string {

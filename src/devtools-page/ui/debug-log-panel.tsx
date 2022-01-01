@@ -2,7 +2,7 @@
 import type {Component} from 'solid-js';
 import {onMount} from 'solid-js';
 
-import type {DebugLog, LogRecord} from '../data/debug-log';
+import type {DebugLog, LogRecord} from '../data/logger-types';
 
 const DebugLogPanel: Component<{debugLog: DebugLog}> = props => {
 

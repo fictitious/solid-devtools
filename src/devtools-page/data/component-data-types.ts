@@ -1,7 +1,7 @@
 
 import type {Accessor, Setter} from 'solid-js';
 
-import type {SerializedValue} from '../../channel/serialized-value';
+import type {SerializedValue} from '../../channel/channel-transport-types';
 
 /*
 naive (non-optimized) reactive data type structures for showing component tree

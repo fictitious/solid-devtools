@@ -10,8 +10,8 @@ import {createRegistryMirror} from '../registry-mirror/registry-mirror';
 import type {RegistryMirrorConnection} from '../registry-mirror/registry-mirror-connection';
 import {createRegistryMirrorConnection} from '../registry-mirror/registry-mirror-connection';
 import {createRoots} from '../data/component-data';
-import type {DebugLog} from '../data/debug-log';
-import {createDebugLog} from '../data/debug-log';
+import type {DebugLog} from '../data/logger-types';
+import {createDebugLog} from '../data/logger';
 import type {ConnectionState} from './connection-state-type';
 import {createConnectionState} from './connection-state';
 import {createPanels} from '../create-panels';
@@ -95,6 +95,7 @@ function initConnector({connectionState, tabId, registryMirror, debugLog, option
             connectionState.removeConnectionListener();
         }
     }
+
     function initChannel(helloAnswer: HelloAnswer) {
         const transport = connectionState.createTransport();
         if (options.logAllMessages) {
@@ -107,6 +108,7 @@ function initConnector({connectionState, tabId, registryMirror, debugLog, option
         // to avoid making sure that ChannelContext is accessed in reactive context (not sure if such dependency on the order is a good idea though)
         registryMirrorConnection = createRegistryMirrorConnection(helloAnswer, connectionState, transport, registryMirror, debugLog.logger());
     }
+
     function disconnectListener() {
         debugLog.unsubscribe();
         registryMirrorConnection?.unsubscribe();

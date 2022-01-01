@@ -1,6 +1,6 @@
 
 import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
-import type {Logger} from '../data/debug-log';
+import type {Logger} from '../data/logger-types';
 import type {RootsData} from '../data/component-data-types';
 import {createRoot, createComponent} from '../data/component-data';
 import type {ComponentMirror, ComponentResultMirror, DomNodeMirror, RegistryRoot, RegistryMirror} from './registry-mirror-types';

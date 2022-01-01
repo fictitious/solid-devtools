@@ -1,5 +1,6 @@
 
-import type {Channel, RegistryStateMessageNames, RegistryStateMessageMap, RegistryStateMessageNoSerialMap, FromPage} from '../../channel/channel-message-types';
+import type {RegistryStateMessageNames, RegistryStateMessageMap, RegistryStateMessageNoSerialMap, FromPage} from '../../channel/channel-message-types';
+import type {Channel} from '../../channel/channel-types';
 
 export interface RegistryConnection {
     connect(channel: Channel<'page'>): void;

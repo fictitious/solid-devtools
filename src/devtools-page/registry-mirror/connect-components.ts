@@ -2,7 +2,7 @@
 import type {ComponentChildrenData} from '../data/component-data-types';
 import {updateChildrenData} from '../data/component-data';
 import type {ComponentMirror, ComponentResultMirror, ComponentParent, DomNodeMirror, RegistryRoot} from './registry-mirror-types';
-import type {Logger} from '../data/debug-log';
+import type {Logger} from '../data/logger-types';
 import {stringify} from './stringify';
 
 /*
