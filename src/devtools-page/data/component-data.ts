@@ -2,7 +2,7 @@
 import {createSignal} from 'solid-js';
 
 import type {SerializedValue} from '../../channel/serialized-value';
-import type {RegistryRoot, DomNodeMirror, ComponentMirror} from './registry-mirror-types';
+import type {RegistryRoot, DomNodeMirror, ComponentMirror} from '../registry-mirror/registry-mirror-types';
 import type {RootsData, RootData, ComponentData, ComponentChildrenData} from './component-data-types';
 
 /*

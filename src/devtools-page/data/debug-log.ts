@@ -54,7 +54,7 @@ class DebugLogImpl implements DebugLog {
     }
 
     unsubscribe(): void {
-        this.transportUnsubscribe && this.transportUnsubscribe();
+        this.transportUnsubscribe?.();
         delete this.transportUnsubscribe;
     }
 

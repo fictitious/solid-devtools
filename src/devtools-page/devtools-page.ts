@@ -1,19 +1,19 @@
 // based on main.js from React Devtools
 
-import {createConnectionAndPanelIfSolidRegistered} from './create-connection';
+import {createConnectionAndPanelsIfSolidRegistered} from './connection/create-connection';
 
 chrome.devtools.network.onNavigated.addListener(checkPageForSolid);
 
-createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected);
+createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected);
 
 // keep checking when the user navigates to a new page.
 function checkPageForSolid() {
-    createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected);
+    createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected);
 }
 
 // check to see if Solid has loaded once per second in case Solid is added after page load
 const loadCheckInterval = setInterval(function() {
-    createConnectionAndPanelIfSolidRegistered(cleanupOnSolidFirstDetected);
+    createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected);
 }, 1000);
 
 function cleanupOnSolidFirstDetected() {

@@ -1,6 +1,5 @@
 
 
-import type {Channel} from '../../channel/channel-message-types';
 import type {Registry, NodeExtra} from './registry';
 import {solidDevtoolsKey, findOrRegisterAncestorOrSelf, findRegisteredDescendantsOrSelf, findRegisteredPrevSiblingOrSelf, findRegisteredNextSiblingOrSelf} from './node-functions';
 
@@ -10,8 +9,7 @@ class InsertParentWrapperImpl {
 
     constructor(
         public parent: Node,
-        public registry: Registry,
-        public channel: Channel<'page'>
+        public registry: Registry
     ) {
     }
 
@@ -85,8 +83,8 @@ class InsertParentWrapperImpl {
     }
 }
 
-function createInsertParentWrapper(parent: Node, registry: Registry, channel: Channel<'page'>): {} {
-    return parent instanceof InsertParentWrapperImpl ? parent : new InsertParentWrapperImpl(parent, registry, channel);
+function createInsertParentWrapper(parent: Node, registry: Registry): {} {
+    return parent instanceof InsertParentWrapperImpl ? parent : new InsertParentWrapperImpl(parent, registry);
 }
 
 export {createInsertParentWrapper};

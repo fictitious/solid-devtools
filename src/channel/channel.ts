@@ -33,9 +33,6 @@ class ChannelImpl extends EventEmitterImpl {
 
     emit(message: Message) {
         super.emit(message);
-        if (message.kind === 'shutdown') {
-            this.shutdown();
-        }
     }
 
     send(kind: string, content: {}) {

@@ -6,6 +6,7 @@ export default defineConfig({
     publicDir: 'root', // to copy manifest.json and other stuff
     plugins: [solidPlugin({solid: {delegateEvents: false}})],
     build: {
+        minify: false,
         outDir: 'dist/unpacked',
         emptyOutDir: false, // necessary for the watch task which runs vite (for pages) and rollup (for scripts) in parallel
                            // otherwise vite will erase scripts written to output dir by rollup

@@ -1,0 +1,124 @@
+// based on main.js from React Devtools
+
+import {globalHookName} from '../../hook/hook-name';
+import type {ChannelMessageFromPage, HelloAnswer} from '../../channel/channel-message-types';
+import {createChannel} from '../../channel/channel';
+import type {Options} from '../../options/options';
+import {loadOptions} from '../../options/options';
+import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
+import {createRegistryMirror} from '../registry-mirror/registry-mirror';
+import type {RegistryMirrorConnection} from '../registry-mirror/registry-mirror-connection';
+import {createRegistryMirrorConnection} from '../registry-mirror/registry-mirror-connection';
+import {createRoots} from '../data/component-data';
+import type {DebugLog} from '../data/debug-log';
+import {createDebugLog} from '../data/debug-log';
+import type {ConnectionState} from './connection-state-type';
+import {createConnectionState} from './connection-state';
+import {createPanels} from '../create-panels';
+
+let connectionStateGlobal: ConnectionState | undefined;
+
+function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected: () => void) {
+    if (!connectionStateGlobal) {
+        chrome.devtools.inspectedWindow.eval(
+            `({solidRegistered: !!window.${globalHookName}?.solidInstance, hookType: window.${globalHookName}?.hookType})`,
+            function({solidRegistered = false, hookType = ''}: {solidRegistered?: boolean; hookType?: string} = {}) {
+                if (solidRegistered && !connectionStateGlobal) {
+                    cleanupOnSolidFirstDetected();
+
+                    void loadOptions()
+                    .then(options => {
+                        connectionStateGlobal = createConnectionState(hookType === 'full' ? 'full' : 'stub');
+                        const rootsData = createRoots();
+                        const debugLog = createDebugLog(options);
+                        const registryMirror = createRegistryMirror(rootsData, debugLog.logger());
+                        createConnection({
+                            connectionState: connectionStateGlobal,
+                            tabId: chrome.devtools.inspectedWindow.tabId,
+                            registryMirror,
+                            debugLog,
+                            options
+                        });
+                        createPanels(connectionStateGlobal, rootsData, registryMirror, options, debugLog);
+                    });
+                }
+            }
+        );
+    }
+}
+
+export interface InitConnector {
+    connectionState: ConnectionState;
+    tabId: number;
+    registryMirror: RegistryMirror;
+    debugLog: DebugLog;
+    options: Options;
+}
+
+function createConnection(p: InitConnector): void {
+
+    initConnector(p);
+
+    // reconnect when a new page is loaded.
+    chrome.devtools.network.onNavigated.addListener(function onNavigated() {
+
+        // background-passthrough will disconnect connection from devtools page (the port created here in initConnector)
+        // when the port on the content script side is disconnected (on navigation too)
+        // so create a new port here
+
+        initConnector(p);
+    });
+}
+
+function initConnector({connectionState, tabId, registryMirror, debugLog, options}: InitConnector): void {
+
+    connectionState.createPortIfNotYetCreated(tabId, debugLog.logger(), connectionListener, disconnectListener);
+
+    let registryMirrorConnection: RegistryMirrorConnection | undefined;
+
+    function connectionListener(message: ChannelMessageFromPage): void {
+        if (message.kind === 'helloAnswer') {
+            debugLog.log(
+                'debug',
+                `helloAnswer: hookType:${message.hookType} hook.deactivated:${message.deactivated ? 'yes' : 'no'} `
+                + `hookInstanceId:${message.hookInstanceId} `
+                + `prev. devtoolsInstanceId in the hook:${message.previousDevtoolsInstanceId ?? 'undefined'} `
+            );
+            connectionState.setHookType(message.hookType);
+            const channelState = message.hookType === 'full' && !message.deactivated ? 'connected': 'connected-incapable';
+            if (channelState === 'connected') {
+                initChannel(message);
+            } else {
+                // if connected, channel state in the connection state is updated in the registryMirrorConnection, after the complete snapshot is received if necessary
+                connectionState.setChannelState(channelState);
+            }
+            connectionState.removeConnectionListener();
+        }
+    }
+    function initChannel(helloAnswer: HelloAnswer) {
+        const transport = connectionState.createTransport();
+        if (options.logAllMessages) {
+            debugLog.subscribe(transport);
+        }
+        const channel = createChannel('devtools', transport);
+        connectionState.setChannel(channel);
+        // the order of setChannel(), then setChannelState() is important because ChannelContext.Provider is inside the switch on the channelState
+        // so channel state should be set after setChannel() so that when component tree is rendered for the first time, ChannelContext is already set
+        // to avoid making sure that ChannelContext is accessed in reactive context (not sure if such dependency on the order is a good idea though)
+        registryMirrorConnection = createRegistryMirrorConnection(helloAnswer, connectionState, transport, registryMirror, debugLog.logger());
+    }
+    function disconnectListener() {
+        debugLog.unsubscribe();
+        registryMirrorConnection?.unsubscribe();
+        connectionState.channel()?.shutdown();
+        connectionState.deletePort();
+        // chrome will stop background worker after 5 minutes of inactivity, even if there's an open port
+        // try to reconnect once if it happens
+        setTimeout(
+            () => initConnector({connectionState, tabId, registryMirror, debugLog, options}),
+            250
+        );
+    }
+}
+
+export {createConnectionAndPanelsIfSolidRegistered};

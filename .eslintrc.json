@@ -21,7 +21,7 @@
         }
     },
     "rules": {
-        "max-len": ["error", {"code": 220}],
+        "max-len": ["error", {"code": 225}],
         "no-console": ["warn", {"allow": ["warn", "error"]}],
         "no-prototype-builtins": "off",
         "no-empty-function": "off",

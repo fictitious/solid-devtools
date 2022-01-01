@@ -2,9 +2,9 @@ import type {Component} from 'solid-js';
 import {Switch, Match, For} from 'solid-js';
 
 
-import type {ConnectionState} from '../connection-state';
+import type {ConnectionState} from '../connection/connection-state-type';
 import type {RootsData} from '../data/component-data-types';
-import type {RegistryMirror} from '../data/registry-mirror-types';
+import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
 import {RootUI} from './component';
 import {ChannelContext} from './channel-context';
 

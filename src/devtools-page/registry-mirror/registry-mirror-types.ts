@@ -1,7 +1,7 @@
 
-import type {Channel} from '../../channel/channel-message-types';
+import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
 import type {SerializedValue} from '../../channel/serialized-value';
-import type {RootData, ComponentData} from './component-data-types';
+import type {RootData, ComponentData} from '../data/component-data-types';
 
 export type ComponentResultMirror = DomNodeMirror | ComponentResultMirror[] | undefined;
 
@@ -44,7 +44,17 @@ export interface DomNodeMirror {
     resultOf: string[];
 }
 
+// omit 'messageSerial' because acks are handled by RegistryMirrorConnection
 export interface RegistryMirror {
-    subscribe(channel: Channel<'devtools'>): void;
-    unsubscribe(channel: Channel<'devtools'>): void;
+    componentRendered(p: Omit<ComponentRendered, 'messageSerial'>): void;
+    componentDisposed(p: Omit<ComponentDisposed, 'messageSerial'>): void;
+    domNodeRegistered(p: Omit<DomNodeRegistered, 'messageSerial'>): void;
+    domNodeRemoved(p: Omit<DomNodeRemoved, 'messageSerial'>): void;
+    domNodeIsRoot(p: Omit<DomNodeIsRoot, 'messageSerial'>): void;
+    domNodeRootDisposed(p: Omit<DomNodeRootDisposed, 'messageSerial'>): void;
+    domNodeAddedResultOf(p: Omit<DomNodeAddedResultOf, 'messageSerial'>): void;
+    domNodeAppended(p: Omit<DomNodeAppended, 'messageSerial'>): void;
+    domNodeInserted(p: Omit<DomNodeInserted, 'messageSerial'>): void;
+
+    clear(): void;
 }

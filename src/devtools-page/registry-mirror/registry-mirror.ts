@@ -1,17 +1,12 @@
 
-import type {
-    Channel, ChannelMessageFromPage,
-    ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended
-} from '../../channel/channel-message-types';
-import type {Logger} from './debug-log';
-import type {RootsData} from './component-data-types';
-import {createRoot, createComponent} from './component-data';
+import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
+import type {Logger} from '../data/debug-log';
+import type {RootsData} from '../data/component-data-types';
+import {createRoot, createComponent} from '../data/component-data';
 import type {ComponentMirror, ComponentResultMirror, DomNodeMirror, RegistryRoot, RegistryMirror} from './registry-mirror-types';
 import {connectDomTree, disconnectDomTree, connectedResultAdded, findAndConnectToParentComponent, removeComponentFromTree, removeDomNodeFromComponentResult} from './connect-components';
 
-const registryMessages = ['componentRendered', 'componentDisposed', 'domNodeRegistered', 'domNodeRemoved', 'domNodeIsRoot', 'domNodeRootDisposed', 'domNodeAddedResultOf', 'domNodeAppended', 'domNodeInserted'] as const;
-
-class RegistryMirrorImpl {
+class RegistryMirrorImpl implements RegistryMirror {
 
     componentMap: Map<string, ComponentMirror>;
     roots: RegistryRoot[];
@@ -24,18 +19,6 @@ class RegistryMirrorImpl {
         this.componentMap = new Map();
         this.roots = [];
         this.domNodeMap = new Map();
-    }
-
-    subscribe(channel: Channel<'devtools'>): void {
-        for (const m of registryMessages) {
-            channel.addListener(m, this[m] as (message: ChannelMessageFromPage) => void);
-        }
-    }
-
-    unsubscribe(channel: Channel<'devtools'>): void {
-        for (const m of registryMessages) {
-            channel.removeListener(m, this[m] as (message: ChannelMessageFromPage) => void);
-        }
     }
 
     componentRendered = (p: ComponentRendered) => {
@@ -146,19 +129,33 @@ class RegistryMirrorImpl {
 
     domNodeAppended = ({parentId, childIds}: DomNodeAppended) => {
         const {parentNode, childNodes} = this.findParentChildNodes('RegistryMirror.domNodeAppended', parentId, childIds);
-        childNodes.forEach(removeFromChildren);
+        childNodes.forEach(removeNodeFromChildren);
         if (parentNode) {
             parentNode.children.push(...childNodes);
-            assignParent(parentNode, childNodes);
+            assignNodeParent(parentNode, childNodes);
             if (parentNode.connected) {
                 const components = childNodes.flatMap(childNode => connectDomTree(this.componentMap, this.logger, childNode));
-                if (components.length) {
+                // 1. there may be duplicates in components returned by connectDomTree
+                // 2. (while this code still can't handle portals) - component can be reachable via different ways
+                //    for example child dom node X is a result of Comp B
+                //    child dom node Y is a result of both comp B and comp A, and B is below A
+                //    components returned by connectDomTree here will contain both comp B and comp A but comp B
+                //    will already have A as a parent through their node Y result
+                //  The code in connectNodeResultOf is assinging parent only if it's not assigned yet, avoiding these problems
+                //  here they need to be avoided too
+                const filtered: ComponentMirror[] = [];
+                for (const c of components) {
+                    if (!c.componentParent && !filtered.includes(c)) {
+                        filtered.push(c);
+                    }
+                }
+                if (filtered.length) {
                     findAndConnectToParentComponent({
                         roots: this.roots,
                         componentMap: this.componentMap,
                         logger: this.logger,
                         parentNode,
-                        components,
+                        components: filtered,
                         prevSiblingIndex: parentNode.children.length - childNodes.length - 1,
                         nextSiblingIndex:  parentNode.children.length
                     });
@@ -169,21 +166,27 @@ class RegistryMirrorImpl {
 
     domNodeInserted = ({parentId, childIds, prevId, nextId}: DomNodeInserted) => {
         const {parentNode, childNodes} = this.findParentChildNodes('RegistryMirror.domNodeInserted', parentId, childIds);
-        childNodes.forEach(removeFromChildren);
+        childNodes.forEach(removeNodeFromChildren);
         if (parentNode) {
             const index = this.validateInsertionIndex({parentNode, prevId, nextId});
             if (index !== undefined) {
                 parentNode.children.splice(index, 0, ...childNodes);
-                assignParent(parentNode, childNodes);
+                assignNodeParent(parentNode, childNodes);
                 if (parentNode.connected) {
                     const components = childNodes.flatMap(childNode => connectDomTree(this.componentMap, this.logger, childNode));
-                    if (components.length) {
+                    const filtered: ComponentMirror[] = [];
+                    for (const c of components) {
+                        if (!c.componentParent && !filtered.includes(c)) {
+                            filtered.push(c);
+                        }
+                    }
+                    if (filtered.length) {
                         findAndConnectToParentComponent({
                             roots: this.roots,
                             componentMap: this.componentMap,
                             logger: this.logger,
                             parentNode,
-                            components,
+                            components: filtered,
                             prevSiblingIndex: index - 1,
                             nextSiblingIndex: index + childNodes.length
                         });
@@ -257,7 +260,7 @@ class RegistryMirrorImpl {
     }
 
     removeDomNode(node: DomNodeMirror): void {
-        removeFromChildren(node);
+        removeNodeFromChildren(node);
         const rootIndex = this.roots.findIndex(r => r.domNode === node);
         if (rootIndex >= 0) {
             this.roots.splice(rootIndex, 1);
@@ -276,15 +279,22 @@ class RegistryMirrorImpl {
         delete node.connected;
         node.children.length = 0;
     }
+
+    clear() {
+        this.componentMap.clear();
+        this.roots.length = 0;
+        this.domNodeMap.clear();
+        this.rootsData.setRoots([]);
+    }
 }
 
-function assignParent(parentNode: DomNodeMirror, childNodes: DomNodeMirror[]): void {
+function assignNodeParent(parentNode: DomNodeMirror, childNodes: DomNodeMirror[]): void {
     for (const node of childNodes) {
         node.parent = parentNode;
     }
 }
 
-function removeFromChildren(node: DomNodeMirror): void {
+function removeNodeFromChildren(node: DomNodeMirror): void {
     const childIndex = node.parent?.children.indexOf(node);
     if (childIndex !== undefined && childIndex >= 0) {
         node.parent?.children.splice(childIndex, 1);

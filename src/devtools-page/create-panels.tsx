@@ -3,10 +3,10 @@ import type {Component} from 'solid-js';
 import {render} from 'solid-js/web';
 
 import type {Options} from '../options/options';
-import type {ConnectionState} from './connection-state';
+import type {ConnectionState} from './connection/connection-state-type';
 import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
 import type {RootsData} from './data/component-data-types';
-import type {RegistryMirror} from './data/registry-mirror-types';
+import type {RegistryMirror} from './registry-mirror/registry-mirror-types';
 import type {DebugLog} from './data/debug-log';
 import {ComponentsPanel} from './ui/components-panel';
 import {DebugLogPanel} from './ui/debug-log-panel';

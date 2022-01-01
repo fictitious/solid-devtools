@@ -9,6 +9,7 @@ export interface SolidInstance { // 'renderer' in react devtools
     buildType: 'development' | 'production';
 }
 
+
 export interface NodeExtraData {
     id: string;
     resultOf?: string[];
@@ -20,12 +21,12 @@ export type ComponentProps = Record<string, unknown>;
 export type ComponentItemResult = string | ComponentItemResult[] | undefined;
 export interface ComponentItemBase {
     id: string;
-    comp: Component;
     name: string;
     props?: {};
     result: ComponentItemResult[];
 }
 export interface ComponentItem extends ComponentItemBase {
+    comp: Component;
     debugBreak: Accessor<boolean>;
     setDebugBreak: Setter<boolean>;
 }

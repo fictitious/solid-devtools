@@ -1,12 +1,14 @@
 
 import type {Component} from 'solid-js';
 
-import type {Channel, DomNodeAppended, DomNodeInserted, RegistryStateMessageNames, RegistryStateMessageNoSerialMap, FromPage} from '../../channel/channel-message-types';
+import type {Channel, DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
 import {serializeValue} from '../../channel/serialized-value';
 import {solidDevtoolsKey, findRegisteredDescendantsOrSelf} from './node-functions';
 import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from './types';
+import type {RegistryConnection} from './registry-connection';
+import {RegistryConnectionImpl} from './registry-connection';
 
-export interface Registry {
+export interface Registry extends RegistryConnection {
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem;
     unregisterComponent(id: string): void;
     registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component>;
@@ -22,19 +24,17 @@ export interface Registry {
 
 export type NodeExtra = {[solidDevtoolsKey]?: NodeExtraData};
 
-class RegistryImpl implements Registry {
+class RegistryImpl extends RegistryConnectionImpl implements Registry {
 
     componentMap: Map<string, ComponentItem>;
     domNodeMap: Map<string, Node & NodeExtra>;
-    messageSerial: number;
 
     constructor(
-        public channel: Channel<'page'>,
         public exposeNodeIds: boolean
     ) {
+        super();
         this.componentMap = new Map();
         this.domNodeMap = new Map();
-        this.messageSerial = 0;
     }
 
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem {
@@ -149,12 +149,34 @@ class RegistryImpl implements Registry {
         }
     }
 
-    sendRegistryMessage<N extends RegistryStateMessageNames>(n: N, m: RegistryStateMessageNoSerialMap[N]): void {
-        this.channel.send(n, {...m, messageSerial: this.nextMessageSerial()} as FromPage[N][0]);
+    sendSnapshot(channel: Channel<'page'>): void {
+        const rootNodes: (Node & Required<NodeExtra>)[] = [];
+        for (const node of this.domNodeMap.values()) {
+            const nodeExtra = node[solidDevtoolsKey];
+            if (nodeExtra) {
+                const message = {nodeType: node.nodeType, name: node.nodeName, ...nodeExtra};
+                channel.send('snapshotDomNode', message);
+                if (nodeExtra.isRoot) {
+                    rootNodes.push(node as Node & Required<NodeExtra>);
+                }
+            }
+        }
+        for (const componentItem of this.componentMap.values()) {
+            const {id, name, result} = componentItem;
+            const message = {id, name, result, props: serializeValue(componentItem.props)};
+            channel.send('snapshotComponent', message);
+        }
+        rootNodes.forEach(n => sendDomNodeAppendedSnapshot(n, channel));
+        channel.send('snapshotCompleted', {});
     }
+}
 
-    nextMessageSerial() {
-        return ++this.messageSerial;
+function sendDomNodeAppendedSnapshot(node: Node & Required<NodeExtra>, channel: Channel<'page'>): void {
+    const children = Array.prototype.flatMap.call(node.childNodes, findRegisteredDescendantsOrSelf) as (Node & Required<NodeExtra>)[];
+    if (children.length) {
+        const message = {parentId: node[solidDevtoolsKey].id, childIds: children.map(c => c[solidDevtoolsKey].id)};
+        channel.send('snapshotDomNodeAppended', message);
+        children.forEach(c => sendDomNodeAppendedSnapshot(c, channel));
     }
 }
 
@@ -168,8 +190,8 @@ function newDomNodeId(): string {
     return `d-${++nextId}`;
 }
 
-function createRegistry(channel: Channel<'page'>, exposeNodeIds: boolean): Registry {
-    return new RegistryImpl(channel, exposeNodeIds);
+function createRegistry(exposeNodeIds: boolean): Registry {
+    return new RegistryImpl(exposeNodeIds);
 }
 
 export {createRegistry};

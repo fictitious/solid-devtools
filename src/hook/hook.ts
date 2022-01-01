@@ -1,10 +1,9 @@
 import {nanoid} from 'nanoid';
 
-import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
+import type {Channel, ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import type {Message} from '../channel/channel';
 import {createChannel} from '../channel/channel';
-import type {BufferedChannel} from '../channel/buffered-channel';
-import {createBufferedChannel} from '../channel/buffered-channel';
+import {canReconnect} from '../channel/can-reconnect';
 import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from '../devtools-page/storage-keys';
 import type {Registry} from './registry/registry';
 import {createRegistry} from './registry/registry';
@@ -19,7 +18,6 @@ class HookImpl extends HookBaseImpl implements Hook {
 
     hookInstanceId: string;
     previousDevtoolsInstanceId?: string;
-    channel: BufferedChannel<'page'>;
     registry: Registry;
     deactivated?: boolean;
 
@@ -30,28 +28,16 @@ class HookImpl extends HookBaseImpl implements Hook {
     constructor() {
         super();
         this.hookInstanceId = nanoid();
-        this.channel = createBufferedChannel('page', 5, () => {
-            this.deactivate();
-        });
         const exposeNodeIds = sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY);
-        this.registry = createRegistry(this.channel, !!exposeNodeIds);
+        this.registry = createRegistry(!!exposeNodeIds);
 
         this.updateComponentWrappers = [];
         this.updateInsertParentWrappers = [];
         this.updateRegisterRoots = [];
-
-        this.channel.addListener('test-message', () => {
-            console.log('test-message', this.registry);
-        });
-        this.channel.addListener('debugBreak', ({componentId}) => {
-            const componentItem = this.registry.getComponent(componentId);
-            componentItem?.setDebugBreak(true);
-            setTimeout(() => componentItem?.setDebugBreak(false), 100);
-        });
     }
 
-    connectChannel({devtoolsInstanceId, previousHookInstanceId}: Hello): HelloAnswer {
-        this.channel.connect(createChannel('page', {
+    connectChannel(hello: Hello): HelloAnswer {
+        const channel = createChannel('page', {
             subscribe(fn: (message: Message) => void) {
                 const listener = ({data, source}: MessageEvent<ChannelMessageFromDevtools | undefined>) => {
                     if (source === window && data?.category === 'solid-devtools-channel' && data.from === 'devtools') {
@@ -64,15 +50,44 @@ class HookImpl extends HookBaseImpl implements Hook {
             send(message: Message) {
                 window.postMessage(message);
             }
-        }));
+        });
         const helloAnswer: HelloAnswer = {
             hookType: 'full',
             deactivated: this.deactivated,
             hookInstanceId: this.hookInstanceId,
             previousDevtoolsInstanceId: this.previousDevtoolsInstanceId
         };
-        this.previousDevtoolsInstanceId = devtoolsInstanceId;
+        this.previousDevtoolsInstanceId = hello.devtoolsInstanceId;
+        void Promise.resolve().then(() => this.setupChannel(hello, helloAnswer, channel));
         return helloAnswer;
+    }
+
+    setupChannel(hello: Hello, helloAnswer: HelloAnswer, channel: Channel<'page'>): void {
+        if (canReconnect(hello, helloAnswer)) {
+            this.registry.reconnect(channel);
+        } else {
+            this.registry.connect(channel);
+        }
+        // TODO: figure out when to call this.deactivate()
+
+        channel.addListener('devtoolsDisconnect', () => {
+            this.registry.disconnect();
+            channel.shutdown();
+        });
+
+        this.addChannelListeners(channel);
+    }
+
+    addChannelListeners(channel: Channel<'page'>) {
+        channel.addListener('test-message', () => {
+            console.log('test-message', this.registry);
+        });
+        channel.addListener('registryStateAck', ({messageSerial}) => this.registry.messageAck(messageSerial));
+        channel.addListener('debugBreak', ({componentId}) => {
+            const componentItem = this.registry.getComponent(componentId);
+            componentItem?.setDebugBreak(true);
+            setTimeout(() => componentItem?.setDebugBreak(false), 100);
+        });
     }
 
     getComponentWrapper(updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper {
@@ -87,7 +102,7 @@ class HookImpl extends HookBaseImpl implements Hook {
     getInsertParentWrapper(updateWrapper: (newWrapper: HookInsertParentWrapper) => void): HookInsertParentWrapper {
         if (!this.deactivated) {
             this.updateInsertParentWrappers.push(updateWrapper);
-            return parent => createInsertParentWrapper(parent, this.registry, this.channel);
+            return parent => createInsertParentWrapper(parent, this.registry);
         } else {
             return parent => parent;
         }

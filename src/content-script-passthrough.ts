@@ -20,5 +20,5 @@ function handleMessageFromPage(e: MessageEvent<ChannelMessageFromPage>) {
 
 function handleDisconnect() {
     window.removeEventListener('message', handleMessageFromPage);
-    window.postMessage(messageFromDevtools('shutdown', {}), '*');
+    window.postMessage(messageFromDevtools('devtoolsDisconnect', {}), '*');
 }
