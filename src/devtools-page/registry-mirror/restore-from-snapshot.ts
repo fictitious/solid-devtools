@@ -1,5 +1,5 @@
 
-import type {ComponentItemResult} from '../../hook/registry/types';
+import type {ComponentItemResult} from '../../hook/registry/node-component-types';
 import type {RegistrySnapshotMessageWithKind} from '../../channel/channel-message-types';
 import type {RegistryMirror} from './registry-mirror-types';
 

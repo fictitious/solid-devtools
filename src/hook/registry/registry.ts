@@ -5,7 +5,7 @@ import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-messa
 import type {Channel} from '../../channel/channel-types';
 import {serializeValue} from '../../channel/serialized-value';
 import {solidDevtoolsKey, findRegisteredDescendantsOrSelf} from './node-functions';
-import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from './types';
+import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from './node-component-types';
 import type {RegistryConnection} from './registry-connection';
 import {RegistryConnectionImpl} from './registry-connection';
 

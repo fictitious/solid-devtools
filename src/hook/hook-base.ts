@@ -1,7 +1,7 @@
 
 import type {Component} from 'solid-js';
 
-import type {SolidInstance} from './registry/types';
+import type {SolidInstance} from './registry/node-component-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import {messageFromPage} from '../channel/channel-message-types';

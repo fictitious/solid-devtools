@@ -1,5 +1,5 @@
 
-import type {NodeExtraData, ComponentItemBase} from '../hook/registry/types';
+import type {NodeExtraData, ComponentItemBase} from '../hook/registry/node-component-types';
 import type {SerializedValue} from './channel-transport-types';
 
 // Types for messages that go through the solid devtools channel - messages exchanged
