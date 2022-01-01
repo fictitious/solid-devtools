@@ -29,7 +29,7 @@ function connectDomTree(componentMap: Map<string, ComponentMirror>, logger: Logg
 //
 // NOTE: tree is traversed from left to right in the caller (connectDomTree),
 // so found child components can be just pushed to the parent component children array
-export interface ConnectedResult {
+interface ConnectedResult {
     top?: ComponentMirror;
     bottom: ComponentMirror;
 }
@@ -170,7 +170,7 @@ function connectedResultAdded(roots: RegistryRoot[], componentMap: Map<string, C
     }
 }
 
-export interface FindAndConnectToParentComponent {
+interface FindAndConnectToParentComponent {
     roots: RegistryRoot[];
     componentMap: Map<string, ComponentMirror>;
     logger: Logger;

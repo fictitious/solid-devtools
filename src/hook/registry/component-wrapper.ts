@@ -4,7 +4,7 @@ import type {Component} from 'solid-js';
 import type {ComponentItem, SolidInstance} from './node-component-types';
 import type {Registry} from './registry-types';
 
-export type ComponentResult = ReturnType<Component> | (() => ComponentResult) | ComponentResult[];
+type ComponentResult = ReturnType<Component> | (() => ComponentResult) | ComponentResult[];
 
 function wrapComponent(comp: Component, solidInstance: SolidInstance, registry: Registry): (props: Record<string, unknown>) => ComponentResult {
     const wrapper = (props: Record<string, unknown>) => {

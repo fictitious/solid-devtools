@@ -8,7 +8,7 @@ import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
 import {RootUI} from './component';
 import {ChannelContext} from './channel-context';
 
-export interface ComponentsPanelProps {
+interface ComponentsPanelProps {
     connectionState: ConnectionState;
     rootsData: RootsData;
     registryMirror: RegistryMirror;

@@ -46,7 +46,7 @@ function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected:
     }
 }
 
-export interface InitConnector {
+interface InitConnector {
     connectionState: ConnectionState;
     tabId: number;
     registryMirror: RegistryMirror;

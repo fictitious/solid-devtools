@@ -1,5 +1,5 @@
 
-export type PopupType = 'disabled' | 'restricted' | 'production' | 'development';
+type PopupType = 'disabled' | 'restricted' | 'production' | 'development';
 
 type IconType = 'normal' | 'gray';
 

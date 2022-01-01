@@ -46,6 +46,8 @@
         "import/first": "error",
         "import/newline-after-import": "error",
         "import/no-default-export": "error",
+        "import/exports-last": "error",
+        "import/group-exports": "error",
         
         "unicorn/filename-case": "error"
     },
@@ -74,6 +76,12 @@
                 }
             }]
         }
+    }, {
+        "files": ["*-types.ts"],
+        "rules": {
+            "import/exports-last": "off",
+            "import/group-exports": "off"
+        }        
     }, {
         "files": [
             "./rollup.config.js",

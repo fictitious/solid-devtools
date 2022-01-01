@@ -1,6 +1,6 @@
 // based on events.js from React Devtools
 
-export type Listener = (arg: unknown) => void;
+type Listener = (arg: unknown) => void;
 
 class EventEmitterImpl {
 

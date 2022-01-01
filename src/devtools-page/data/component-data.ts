@@ -22,7 +22,7 @@ function createRoot(rootsData: RootsData, domNode: DomNodeMirror, components: Co
     return root;
 }
 
-export interface CreateComponent {
+interface CreateComponent {
     id: string;
     name: string;
     props: SerializedValue;

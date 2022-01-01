@@ -1,5 +1,5 @@
 
-export interface DecodedPortName {
+interface DecodedPortName {
     tabId: number;
     devtoolsInstanceId: string;
     previousHookInstanceId?: string;
