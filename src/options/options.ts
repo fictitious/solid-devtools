@@ -1,9 +1,5 @@
 
-export interface Options {
-    exposeDomNodeIds?: boolean;
-    showLogPanel?: boolean;
-    logAllMessages?: boolean;
-}
+import type {Options} from './options-types';
 
 function loadOptions(): Promise<Options> {
     return chrome.storage.sync.get(null) as Promise<Options>;

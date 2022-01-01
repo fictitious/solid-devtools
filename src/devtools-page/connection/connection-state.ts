@@ -10,7 +10,7 @@ import type {Channel} from '../../channel/channel-types';
 import {canReconnect} from '../../channel/can-reconnect';
 import {encodePortName} from '../../channel/port-name';
 import type {Logger} from '../data/logger-types';
-import type {ConnectionState, ChannelState} from './connection-state-type';
+import type {ConnectionState, ChannelState} from './connection-state-types';
 
 class ConnectionStateImpl implements ConnectionState {
 

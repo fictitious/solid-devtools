@@ -3,7 +3,7 @@ import type {Transport, Message} from '../../channel/channel-transport-types';
 import type {RegistryStateMessageNames, RegistryStateMessageWithKind, RegistrySnapshotMessageNames, RegistrySnapshotMessageWithKind, HelloAnswer} from '../../channel/channel-message-types';
 import {registryStateMessageNames, registrySnapshotMessageNames, messageFromDevtools} from '../../channel/channel-message-types';
 import type {Logger} from '../data/logger-types';
-import type {ConnectionState} from '../connection/connection-state-type';
+import type {ConnectionState} from '../connection/connection-state-types';
 import type {RegistryMirror} from './registry-mirror-types';
 import {restoreMirrorFromSnapshot} from './restore-from-snapshot';
 

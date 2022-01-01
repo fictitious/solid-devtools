@@ -1,5 +1,5 @@
 
-import type {Options} from '../../options/options';
+import type {Options} from '../../options/options-types';
 import type {Message, Transport} from '../../channel/channel-transport-types';
 import type {DebugLog, LogRecord, DebugLogRenderer, LogDebugMessage, Logger} from './logger-types';
 

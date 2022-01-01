@@ -3,7 +3,7 @@ import type {Component} from 'solid-js';
 import {createResource, Show} from 'solid-js';
 import {createStore} from 'solid-js/store';
 
-import type {Options} from './options';
+import type {Options} from './options-types';
 import {loadOptions, saveOptions} from './options';
 
 const OptionsForm: Component<{options: Options}> = props => {

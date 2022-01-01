@@ -3,7 +3,7 @@
 import {globalHookName} from '../../hook/hook-name';
 import type {ChannelMessageFromPage, HelloAnswer} from '../../channel/channel-message-types';
 import {createChannel} from '../../channel/channel';
-import type {Options} from '../../options/options';
+import type {Options} from '../../options/options-types';
 import {loadOptions} from '../../options/options';
 import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
 import {createRegistryMirror} from '../registry-mirror/registry-mirror';
@@ -12,7 +12,7 @@ import {createRegistryMirrorConnection} from '../registry-mirror/registry-mirror
 import {createRoots} from '../data/component-data';
 import type {DebugLog} from '../data/logger-types';
 import {createDebugLog} from '../data/logger';
-import type {ConnectionState} from './connection-state-type';
+import type {ConnectionState} from './connection-state-types';
 import {createConnectionState} from './connection-state';
 import {createPanels} from '../create-panels';
 
