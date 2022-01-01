@@ -58,3 +58,7 @@ export interface RegistryMirror {
 
     clear(): void;
 }
+
+export interface RegistryMirrorConnection {
+    unsubscribe(): void;
+}

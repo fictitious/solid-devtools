@@ -5,9 +5,8 @@ import type {ChannelMessageFromPage, HelloAnswer} from '../../channel/channel-me
 import {createChannel} from '../../channel/channel';
 import type {Options} from '../../options/options-types';
 import {loadOptions} from '../../options/options';
-import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
+import type {RegistryMirror, RegistryMirrorConnection} from '../registry-mirror/registry-mirror-types';
 import {createRegistryMirror} from '../registry-mirror/registry-mirror';
-import type {RegistryMirrorConnection} from '../registry-mirror/registry-mirror-connection';
 import {createRegistryMirrorConnection} from '../registry-mirror/registry-mirror-connection';
 import {createRoots} from '../data/component-data';
 import type {DebugLog} from '../data/logger-types';

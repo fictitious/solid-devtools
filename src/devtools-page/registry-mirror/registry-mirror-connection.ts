@@ -4,12 +4,8 @@ import type {RegistryStateMessageNames, RegistryStateMessageWithKind, RegistrySn
 import {registryStateMessageNames, registrySnapshotMessageNames, messageFromDevtools} from '../../channel/channel-message-types';
 import type {Logger} from '../data/logger-types';
 import type {ConnectionState} from '../connection/connection-state-types';
-import type {RegistryMirror} from './registry-mirror-types';
+import type {RegistryMirror, RegistryMirrorConnection} from './registry-mirror-types';
 import {restoreMirrorFromSnapshot} from './restore-from-snapshot';
-
-export interface RegistryMirrorConnection {
-    unsubscribe(): void;
-}
 
 class RegistryMirrorConnectionImpl {
 
