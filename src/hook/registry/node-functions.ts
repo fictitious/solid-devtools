@@ -1,7 +1,6 @@
 
 import type {Registry, NodeExtra} from './registry-types';
-
-const solidDevtoolsKey = Symbol('key for keeping solid devtools data');
+import {solidDevtoolsKey} from './registry-types';
 
 function findOrRegisterAncestorOrSelf(
     node: Node & NodeExtra,

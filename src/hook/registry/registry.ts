@@ -4,9 +4,10 @@ import type {Component} from 'solid-js';
 import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
 import type {Channel} from '../../channel/channel-types';
 import {serializeValue} from '../../channel/serialized-value';
-import {solidDevtoolsKey, findRegisteredDescendantsOrSelf} from './node-functions';
+import {findRegisteredDescendantsOrSelf} from './node-functions';
 import type {ComponentItem, ComponentProps, SolidInstance} from './node-component-types';
 import type {Registry, NodeExtra} from './registry-types';
+import {solidDevtoolsKey} from './registry-types';
 import {RegistryConnectionImpl} from './registry-connection';
 
 class RegistryImpl extends RegistryConnectionImpl implements Registry {

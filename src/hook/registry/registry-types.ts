@@ -3,9 +3,9 @@ import type {Component} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-types';
 import type {DomNodeAppended, DomNodeInserted, RegistryStateMessageNames, RegistryStateMessageNoSerialMap} from '../../channel/channel-message-types';
-import type {solidDevtoolsKey} from './node-functions';
 import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from './node-component-types';
 
+export const solidDevtoolsKey = Symbol('key for keeping solid devtools data');
 
 export interface RegistryConnection {
     connect(channel: Channel<'page'>): void;
@@ -30,4 +30,3 @@ export interface Registry extends RegistryConnection {
 }
 
 export type NodeExtra = {[solidDevtoolsKey]?: NodeExtraData};
-
