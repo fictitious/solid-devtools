@@ -1,5 +1,5 @@
 
-import type {Registry, NodeExtra} from './registry';
+import type {Registry, NodeExtra} from './registry-types';
 
 const solidDevtoolsKey = Symbol('key for keeping solid devtools data');
 

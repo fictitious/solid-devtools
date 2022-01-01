@@ -6,7 +6,7 @@ import type {Channel} from '../channel/channel-types';
 import {createChannel} from '../channel/channel';
 import {canReconnect} from '../channel/can-reconnect';
 import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from '../devtools-page/storage-keys';
-import type {Registry} from './registry/registry';
+import type {Registry} from './registry/registry-types';
 import {createRegistry} from './registry/registry';
 import {wrapComponent} from './registry/component-wrapper';
 import {createInsertParentWrapper} from './registry/insert-parent-wrapper';

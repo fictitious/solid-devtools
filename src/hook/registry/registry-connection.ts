@@ -1,14 +1,7 @@
 
 import type {RegistryStateMessageNames, RegistryStateMessageMap, RegistryStateMessageNoSerialMap, FromPage} from '../../channel/channel-message-types';
 import type {Channel} from '../../channel/channel-types';
-
-export interface RegistryConnection {
-    connect(channel: Channel<'page'>): void;
-    reconnect(channel: Channel<'page'>): void;
-    disconnect(): void;
-    sendRegistryMessage<N extends RegistryStateMessageNames>(n: N, m: RegistryStateMessageNoSerialMap[N]): void;
-    messageAck(serial: number): void;
-}
+import type {RegistryConnection} from './registry-types';
 
 interface UnackedMessage<N extends RegistryStateMessageNames> {
     n: N;

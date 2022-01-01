@@ -1,6 +1,6 @@
 
 
-import type {Registry, NodeExtra} from './registry';
+import type {Registry, NodeExtra} from './registry-types';
 import {solidDevtoolsKey, findOrRegisterAncestorOrSelf, findRegisteredDescendantsOrSelf, findRegisteredPrevSiblingOrSelf, findRegisteredNextSiblingOrSelf} from './node-functions';
 
 // intercept and transmit to devtools all operations
