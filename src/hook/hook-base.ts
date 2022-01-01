@@ -1,24 +1,11 @@
 
-import type {Component} from 'solid-js';
 
 import type {SolidInstance} from './registry/node-component-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import {messageFromPage} from '../channel/channel-message-types';
+import type {Hook, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
 import {globalHookName} from './hook-name';
-
-export type HookComponentWrapper = (c: Component) => Component;
-export type HookInsertParentWrapper = (p: Node) => {};
-export type HookRegisterRoot = (r: Node) => () => void;
-
-export interface Hook {
-    solidInstance?: SolidInstance;
-    registerSolidInstance(solidInstance: SolidInstance): void;
-    connectChannel(m: Hello): HelloAnswer;
-    getComponentWrapper(updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper;
-    getInsertParentWrapper(updateWrapper: (newWrapper: HookInsertParentWrapper) => void): HookInsertParentWrapper;
-    getRegisterRoot(updateRegisterRoot: (newRegisterRoot: HookRegisterRoot) => void): HookRegisterRoot;
-}
 
 // 'stub' hook implementation to inject into the page when solid devtools panel is not open
 class HookBaseImpl implements Hook {
