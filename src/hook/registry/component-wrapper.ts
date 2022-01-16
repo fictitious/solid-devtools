@@ -7,24 +7,33 @@ import type {Registry} from './registry-types';
 type ComponentResult = ReturnType<Component> | (() => ComponentResult) | ComponentResult[];
 
 function wrapComponent(comp: Component, solidInstance: SolidInstance, registry: Registry): (props: Record<string, unknown>) => ComponentResult {
-    const wrapper = (props: Record<string, unknown>) => {
+    const wrapper = new Proxy(
+        (props: Record<string, unknown>) => {
 
-        const componentItem: ComponentItem = registry.registerComponent(solidInstance, comp, props);
-        solidInstance.onCleanup(() => {
-            registry.unregisterComponent(componentItem.id);
-        });
-
-        const compMemo = solidInstance.createMemo(() => {
-            const debugBreak = componentItem.debugBreak();
-            return solidInstance.untrack(() => {
-                if (debugBreak) debugger;
-                return comp(props);
+            const componentItem: ComponentItem = registry.registerComponent(solidInstance, comp, props);
+            solidInstance.onCleanup(() => {
+                registry.unregisterComponent(componentItem.id);
             });
-        });
 
-        return wrapComponentResult(componentItem, compMemo(), undefined, registry);
-    };
-    wrapper.componentName = comp.name;
+            const compMemo = solidInstance.createMemo(() => {
+                const debugBreak = componentItem.debugBreak();
+                return solidInstance.untrack(() => {
+                    if (debugBreak) debugger;
+                    return comp(props);
+                });
+            });
+
+            return wrapComponentResult(componentItem, compMemo(), undefined, registry);
+        }, {
+            get(_, property: keyof Component) {
+                return comp[property];
+            },
+            set(_, property: keyof Component, value: Component[keyof Component]) {
+                comp[property] = value;
+                return true;
+            }
+        }
+    );
     return wrapper;
 }
 
