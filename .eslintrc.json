@@ -77,6 +77,11 @@
             }]
         }
     }, {
+        "files": ["./src/background/*.ts"],
+        "parserOptions": {
+            "project": "tsconfig.worker.json"
+        }
+    }, {
         "files": ["*-types.ts"],
         "rules": {
             "import/exports-last": "off",

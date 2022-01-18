@@ -3,6 +3,9 @@ import type {HookMessage} from '../hook/hook-message-types';
 import {setIconAndPopup} from './action-popup';
 import {createBackgroundPassthrough} from './background-passthrough';
 
+const workerSelf = self as unknown as ServiceWorkerGlobalScope;
+workerSelf.addEventListener('install', event => event.waitUntil(workerSelf.skipWaiting()));
+
 createBackgroundPassthrough();
 
 function isRestrictedBrowserPage(url: string | undefined) {

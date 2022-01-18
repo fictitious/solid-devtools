@@ -3,9 +3,12 @@ import rollupPluginNodeResolve from '@rollup/plugin-node-resolve';
 import rollupPluginTypeScript from '@rollup/plugin-typescript';
 //import {terser as rollupPluginTerser} from 'rollup-plugin-terser';
 
-const plugins = [
+const commonPlugins = [
     rollupPluginCommonJS(),
-    rollupPluginNodeResolve({browser: true}),
+    rollupPluginNodeResolve({browser: true})
+];
+const plugins = [
+    ...commonPlugins,
     rollupPluginTypeScript()
 ];
 
@@ -19,7 +22,7 @@ const commonOutputSettings = {
 };
 
 export default [{
-    plugins,
+    plugins: [...commonPlugins, rollupPluginTypeScript({tsconfig: 'tsconfig.worker.json'})],
     input: 'src/background/background-worker.ts',
     output: {
         ...commonOutputSettings,
