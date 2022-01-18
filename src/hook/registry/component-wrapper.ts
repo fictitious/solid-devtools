@@ -44,8 +44,19 @@ function wrapComponentResult(componentItem: ComponentItem, result: ComponentResu
     } else if (typeof result === 'function') {
         return () => wrapComponentResult(componentItem, result(), index, registry);
     } else {
+        if ((result instanceof Node) && ('remove' in result)) {
+            wrapNodeMethods(result, registry);
+        }
         return registry.registerComponentResult(result, index === undefined ? [0] : index, componentItem);
     }
+}
+
+function wrapNodeMethods(node: ChildNode, registry: Registry) {
+    const originalRemove = node.remove.bind(node);
+    node.remove = () => {
+        registry.nodeRemoved(node);
+        originalRemove();
+    };
 }
 
 export {wrapComponent};
