@@ -18,17 +18,18 @@ const ConnectionStateSwitch: Component<{connectionState: ConnectionState}> = pro
     const reload = () => chrome.devtools.inspectedWindow.reload({});
     return <Switch>
         <Match when={props.connectionState.hookType() === 'stub'}>
-            <p>The page was loaded while Solid devtools were not active</p>
+            <p>The page was loaded while Solid devtools were not active.</p>
             <p>Solid does not create data structures necessary for visualizing the component tree while the devtools window is not shown.</p>
             <p>Click <button onclick={reload}>Reload</button> to reload the page</p>
         </Match>
         <Match when={props.connectionState.channelState() === 'disconnected'}>
-            <p>Solid devtools has disconnected from the page</p>
+            <p>Solid devtools has disconnected from the page.</p>
+            <p>Please close devtools and open again to reconnect.</p>
         </Match>
         <Match when={props.connectionState.channelState() === 'connected-incapable'}>
-            <p>The page was updated while Solid devtools were not active</p>
+            <p>The page was updated while Solid devtools were not active.</p>
             <p>Solid does not maintain data structures necessary for visualizing the component tree while the devtools window is not shown.</p>
-            <p>Click <button onclick={reload}>Reload</button> to reload the page</p>
+            <p>Click <button onclick={reload}>Reload</button> to reload the page.</p>
         </Match>
         <Match when={props.connectionState.channelState() === 'connecting'}>
             <p>connecting...</p>

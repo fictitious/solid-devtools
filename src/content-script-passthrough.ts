@@ -14,6 +14,8 @@ window.addEventListener('message', handleMessageFromPage);
 
 function handleMessageFromPage(e: MessageEvent<ChannelMessageFromPage>) {
     if (e.source === window && e.data?.category === 'solid-devtools-channel') {
+        // TODO handle exception here (chrome does not always call onDisconnect listener?)
+        // Uncaught Error: Attempting to use a disconnected port object
         port.postMessage(e.data);
     }
 }
