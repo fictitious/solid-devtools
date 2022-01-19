@@ -1,5 +1,5 @@
 import type {Component} from 'solid-js';
-import {Switch, Match, For} from 'solid-js';
+import {createSignal, createEffect, Show, Switch, Match, For} from 'solid-js';
 
 
 import type {ConnectionState} from '../connection/connection-state-types';
@@ -13,6 +13,13 @@ interface ComponentsPanelProps {
     rootsData: RootsData;
     registryMirror: RegistryMirror;
 }
+
+const TimeoutMessage: Component = () => {
+    const [visible, setVisible] = createSignal(false);
+    const timeoutSeconds = 8;
+    createEffect(() => setTimeout(() => setVisible(true), timeoutSeconds * 1000));
+    return <Show when={visible()}><p>Seems like something went wrong. Try to close the browser window and open again.</p></Show>;
+};
 
 const ConnectionStateSwitch: Component<{connectionState: ConnectionState}> = props => {
     const reload = () => chrome.devtools.inspectedWindow.reload({});
@@ -33,6 +40,7 @@ const ConnectionStateSwitch: Component<{connectionState: ConnectionState}> = pro
         </Match>
         <Match when={props.connectionState.channelState() === 'connecting'}>
             <p>connecting...</p>
+            <TimeoutMessage />
         </Match>
         <Match when={props.connectionState.channelState() === 'connected'}>
             <ChannelContext.Provider value={props.connectionState.channel()}>
