@@ -1,4 +1,6 @@
 import {nanoid} from 'nanoid';
+import type {Component} from 'solid-js';
+import type {ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js/devtools-api';
 
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import type {Message} from '../channel/channel-transport-types';
@@ -10,7 +12,7 @@ import type {Registry} from './registry/registry-types';
 import {createRegistry} from './registry/registry';
 import {wrapComponent} from './registry/component-wrapper';
 import {createInsertParentWrapper} from './registry/insert-parent-wrapper';
-import type {Hook, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
+import type {Hook} from './hook-types';
 import {HookBaseImpl, installHook} from './hook-base';
 
 // this is the script to inject into the page when solid devtools panel is open
@@ -22,7 +24,7 @@ class HookImpl extends HookBaseImpl implements Hook {
     registry: Registry;
     deactivated?: boolean;
 
-    updateComponentWrappers: ((newWrapper: HookComponentWrapper) => void)[];
+    updateComponentWrappers: ((newWrapper: ComponentWrapper) => void)[];
     updateInsertParentWrappers: ((newWrapper: HookInsertParentWrapper) => void)[];
     updateRegisterRoots: ((newRegisterRoot: HookRegisterRoot) => void)[];
 
@@ -91,10 +93,10 @@ class HookImpl extends HookBaseImpl implements Hook {
         });
     }
 
-    getComponentWrapper(updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper {
+    getComponentWrapper(updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper {
         if (!this.deactivated) {
             this.updateComponentWrappers.push(updateWrapper);
-            return comp => wrapComponent(comp, this.solidInstance!, this.registry);
+            return comp => wrapComponent(comp as Component, this.solidInstance!, this.registry);
         } else {
             return comp => comp;
         }

@@ -1,11 +1,11 @@
 
+import {devtoolsHookName} from 'solid-js/devtools-api';
+import type {RegisterSolidInstance as SolidInstance, ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js/devtools-api';
 
-import type {SolidInstance} from './registry/node-component-types';
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import {messageFromPage} from '../channel/channel-message-types';
-import type {Hook, HookComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from './hook-types';
-import {globalHookName} from './hook-name';
+import type {Hook} from './hook-types';
 
 // 'stub' hook implementation to inject into the page when solid devtools panel is not open
 class HookBaseImpl implements Hook {
@@ -30,7 +30,7 @@ class HookBaseImpl implements Hook {
         };
     }
 
-    getComponentWrapper(_updateWrapper: (newWrapper: HookComponentWrapper) => void): HookComponentWrapper {
+    getComponentWrapper(_updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper {
         return c => c;
     }
 
@@ -44,10 +44,10 @@ class HookBaseImpl implements Hook {
 }
 
 function installHook(target: {}, hook: Hook): void {
-    if (target.hasOwnProperty(globalHookName)) {
+    if (target.hasOwnProperty(devtoolsHookName)) {
         return undefined;
     }
-    Object.defineProperty(target, globalHookName, {
+    Object.defineProperty(target, devtoolsHookName, {
         enumerable: false,
         get() { return hook }
     });

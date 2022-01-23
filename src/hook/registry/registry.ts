@@ -1,11 +1,12 @@
 
 import type {Component} from 'solid-js';
+import type {RegisterSolidInstance as SolidInstance} from 'solid-js/devtools-api';
 
 import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
 import type {Channel} from '../../channel/channel-types';
 import {serializeValue} from '../../channel/serialized-value';
 import {findRegisteredDescendantsOrSelf} from './node-functions';
-import type {ComponentItem, ComponentProps, SolidInstance} from './node-component-types';
+import type {ComponentItem, ComponentProps} from './node-component-types';
 import type {Registry, NodeExtra} from './registry-types';
 import {solidDevtoolsKey} from './registry-types';
 import {RegistryConnectionImpl} from './registry-connection';

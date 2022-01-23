@@ -1,9 +1,10 @@
 
 import type {Component} from 'solid-js';
+import type {RegisterSolidInstance as SolidInstance} from 'solid-js/devtools-api';
 
 import type {Channel} from '../../channel/channel-types';
 import type {DomNodeAppended, DomNodeInserted, RegistryStateMessageNames, RegistryStateMessageNoSerialMap} from '../../channel/channel-message-types';
-import type {NodeExtraData, ComponentItem, ComponentProps, SolidInstance} from './node-component-types';
+import type {NodeExtraData, ComponentItem, ComponentProps} from './node-component-types';
 
 export const solidDevtoolsKey = Symbol('key for keeping solid devtools data');
 

@@ -1,7 +1,8 @@
 
 import type {Component} from 'solid-js';
+import type {RegisterSolidInstance as SolidInstance} from 'solid-js/devtools-api';
 
-import type {ComponentItem, SolidInstance} from './node-component-types';
+import type {ComponentItem} from './node-component-types';
 import type {Registry} from './registry-types';
 
 type ComponentResult = ReturnType<Component> | (() => ComponentResult) | ComponentResult[];

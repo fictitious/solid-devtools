@@ -1,6 +1,7 @@
 // based on main.js from React Devtools
 
-import {globalHookName} from '../../hook/hook-name';
+import {devtoolsHookName} from 'solid-js/devtools-api';
+
 import type {ChannelMessageFromPage, HelloAnswer} from '../../channel/channel-message-types';
 import {createChannel} from '../../channel/channel';
 import type {Options} from '../../options/options-types';
@@ -20,7 +21,7 @@ let connectionStateGlobal: ConnectionState | undefined;
 function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected: () => void) {
     if (!connectionStateGlobal) {
         chrome.devtools.inspectedWindow.eval(
-            `({solidRegistered: !!window.${globalHookName}?.solidInstance, hookType: window.${globalHookName}?.hookType})`,
+            `({solidRegistered: !!window.${devtoolsHookName}?.solidInstance, hookType: window.${devtoolsHookName}?.hookType})`,
             function({solidRegistered = false, hookType = ''}: {solidRegistered?: boolean; hookType?: string} = {}) {
                 if (solidRegistered && !connectionStateGlobal) {
                     cleanupOnSolidFirstDetected();
