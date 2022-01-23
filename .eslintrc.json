@@ -74,7 +74,8 @@
                 "types": {
                     "{}": false
                 }
-            }]
+            }],
+            "import/named": "off"
         }
     }, {
         "files": ["./src/background/*.ts"],
