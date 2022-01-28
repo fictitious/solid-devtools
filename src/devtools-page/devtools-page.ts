@@ -1,6 +1,9 @@
 // based on main.js from React Devtools
+// this is the main script for devtools-page.html
 
 import {createConnectionAndPanelsIfSolidRegistered} from './connection/create-connection';
+
+import './ui/index.css';
 
 chrome.devtools.network.onNavigated.addListener(checkPageForSolid);
 

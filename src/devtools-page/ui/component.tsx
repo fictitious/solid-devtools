@@ -12,7 +12,7 @@ const ComponentUI: Component<ComponentData> = componentData => {
     const channel = useContext(ChannelContext);
     const componentClick = () => channel?.send('debugBreak', {componentId: componentData.id});
     return <>
-        <div onclick={componentClick} style={{'padding-left': `${indent}em`}}>{`<${componentData.name} id="${componentData.id}">`}</div>
+        <div onclick={componentClick} style={{'padding-left': `${indent}em`}}>{`${componentData.name} id="${componentData.id}"`}</div>
         <For each={componentData.getChildren()}>{component =>
             <ComponentUI {...{...component}} />
         }</For>

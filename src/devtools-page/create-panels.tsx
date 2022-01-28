@@ -34,7 +34,7 @@ function createPanels(connectionState: ConnectionState, rootsData: RootsData, re
             'pages/panel.html',
             extensionPanel => {
                 extensionPanel.onShown.addListener(panelWindow => {
-                    renderPanelOnce(panelWindow, () => <DebugLogPanel debugLog={debugLog}/>);
+                    renderPanelOnce(panelWindow, () => <DebugLogPanel debugLog={debugLog} channel={connectionState.channel} registryMirror={registryMirror}/>);
                 });
             }
         );
@@ -55,6 +55,8 @@ function renderPanelOnce(panelWindow: Window, ui: () => ReturnType<Component>): 
         // NOTE: componentsWindow is an iframe, so rootElement is not from the document where this code is running.
         // It's OK (except for solid event delegaion) as long as all the code is here (no code is loaded in that iframe in panel.html)
         render(ui, rootElement!);
+        // see panel.js
+        (panelWindow as unknown as {injectStyles: (getStyleTags: () => unknown[]) => void}).injectStyles(cloneStyleTags);
     }
 }
 
@@ -63,6 +65,20 @@ function clearInitialHTML(element: HTMLElement & {_initialHTMLCleared?: boolean}
         element.innerHTML = '';
         element._initialHTMLCleared = true;
     }
+}
+
+function cloneStyleTags() {
+    const linkTags: HTMLLinkElement[] = [];
+    Array.prototype.forEach.call(document.getElementsByTagName('link'), (linkTag: HTMLLinkElement) => {
+        if (linkTag.rel === 'stylesheet') {
+            const newLinkTag = document.createElement('link');
+            Array.prototype.forEach.call(linkTag.attributes, (attribute: Attr) => {
+                newLinkTag.setAttribute(attribute.nodeName, attribute.nodeValue!);
+            });
+            linkTags.push(newLinkTag);
+        }
+    });
+    return linkTags;
 }
 
 export {createPanels};
