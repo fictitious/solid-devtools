@@ -18,12 +18,12 @@ const DebugLogPanel: Component<{debugLog: DebugLog; registryMirror: RegistryMirr
     const renderer = new DebugLogRenderer();
     onMount(() => props.debugLog.attach(renderer.render));
 
-    return <div class="flex flex-col h-full">
-        <div class="flex-none w-full flex py-1">
+    return <div class="h-full flex flex-col">
+        <div class="w-full flex-none flex py-1">
             <button onclick={renderer.clear} class={toolbarButtonClass}>Clear</button>
             <button onclick={logRegistry} class={toolbarButtonClass}>Log Registry</button>
         </div>
-        <div ref={renderer.div} class="flex-auto w-full overflow-auto text-xs leading-tight"></div>
+        <div ref={renderer.div} class="w-full flex-auto overflow-auto text-xs leading-tight"></div>
     </div>;
 };
 
