@@ -1,14 +1,17 @@
 import type {Component} from 'solid-js';
-import {createSignal, createEffect, onMount, Show, Switch, Match, For} from 'solid-js';
+import {createSignal, createEffect, onMount, onCleanup, Show, Switch, Match} from 'solid-js';
 
-
+import type {ComponentDisposed} from '../../channel/channel-message-types';
 import type {ConnectionState} from '../connection/connection-state-types';
 import type {RootsData} from '../data/component-data-types';
 import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
 import {LOCAL_STORAGE_DEVTOOLS_COMPONENTS_PANEL_RESIZE_KEY} from '../storage-keys';
-import {RootUI} from './component';
+import type {ComponentData} from '../data/component-data-types';
 import {ChannelContext} from './channel-context';
 import {buttonClass} from './common-styles';
+import {ComponentTree} from './component-tree';
+import {ComponentDetails} from './component-details';
+import {SelectedComponentContext} from './selected-component-context';
 
 interface ComponentsPanelProps {
     connectionState: ConnectionState;
@@ -113,27 +116,36 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
         }
     });
 
+    const [selectedComponent, setSelectedComponent] = createSignal<ComponentData | undefined>();
+    const onComponentDisposed = ({id}: ComponentDisposed) => {
+        if (id === selectedComponent()?.id) {
+            setSelectedComponent(undefined);
+        }
+    };
+    createEffect(() => {
+        const channel = props.connectionState.channel();
+        channel && channel.addListener('componentDisposed', onComponentDisposed);
+    });
+    onCleanup(() => {
+        const channel = props.connectionState.channel();
+        channel && channel.removeListener('componentDisposed', onComponentDisposed);
+    });
+
     return <div ref={outerContainer} classList={{'text-sm': true, 'h-full': true, 'w-full': true, 'flex': true, 'sm:flex-row': true, 'flex-col': true, 'sm:cursor-ew-resize': resizing(), 'cursor-ns-resize': resizing()}}>
         <ConnectionStateSwitch connectionState={props.connectionState}>
-            <div ref={treeContainer} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
-                <div class="h-full w-full flex flex-col">
-                    <div class="w-full flex-none flex flex-row py-1">
-                        <div class="py-0.5 mx-3 px-3 border border-blue-400">Placeholder</div>
-                    </div>
-                    <div class="flex-auto w-full overflow-auto text-xs leading-snug">
-                        <For each={props.rootsData.roots()}>{root =>
-                            <RootUI {...{...root}} />
-                        }</For>
-                    </div>
+            <SelectedComponentContext.Provider value={{selectedComponent, setSelectedComponent}}>
+                <div ref={treeContainer} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
+                    <ComponentTree {...{roots: props.rootsData.roots}} />
                 </div>
-            </div>
 
-            <div class="grow-0 shrink-0 basis-0 relative">
-                <div onMouseDown={[setResizing, true]} class="absolute sm:h-full h-[5px] sm:w-[5px] w-full sm:-left-[2px] sm:top-0 -top-[2px] sm:cursor-ew-resize cursor-ns-resize"></div>
-            </div>
+                <div class="grow-0 shrink-0 basis-0 relative">
+                    <div onMouseDown={[setResizing, true]} class="absolute sm:h-full h-[5px] sm:w-[5px] w-full sm:-left-[2px] sm:top-0 -top-[2px] sm:cursor-ew-resize cursor-ns-resize"></div>
+                </div>
 
-            <div class="overflow-auto grow shrink sm:basis-1/3 basis:1/2 sm:border-l sm:border-t-0 border-t">
-            </div>
+                <div class="overflow-auto grow shrink sm:basis-1/3 basis:1/2 sm:border-l sm:border-t-0 border-t">
+                    <ComponentDetails />
+                </div>
+            </SelectedComponentContext.Provider>
         </ConnectionStateSwitch>
     </div>;
 };
