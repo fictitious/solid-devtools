@@ -69,7 +69,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
     const SM_MIN_WIDTH_PIXELS = 640; // sm tailwindcss breakpoint
     const MIN_SIZE_PIXELS = 50; // min width/height for tree/props panels
     let outerContainer!: HTMLDivElement;
-    let treeContainer!: HTMLDivElement;
+    let treeContainer: HTMLDivElement | undefined;
     const [resizing, setResizing] = createSignal(false);
 
     const ratios = loadResizeRatios() ?? {
@@ -77,7 +77,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
         vertical: 1/2 // and basis-1/2 for vertical
     };
     const setTreeSizeRatio = (orientation: 'horizontal' | 'vertical') => {
-        treeContainer.style.setProperty(`--${orientation}-resize-percent`, `${ratios[orientation] * 100}%`);
+        treeContainer?.style.setProperty(`--${orientation}-resize-percent`, `${ratios[orientation] * 100}%`);
     };
     onMount(() => {
         setTreeSizeRatio('horizontal');
@@ -90,7 +90,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
         const {width: outerWidth, height: outerHeight} = outerContainer.getBoundingClientRect();
         const orientation = outerWidth >= SM_MIN_WIDTH_PIXELS ? 'horizontal' : 'vertical';
         if (!initial) {
-            const {width: treeWidth, height: treeHeight} = treeContainer.getBoundingClientRect();
+            const {width: treeWidth, height: treeHeight} = treeContainer?.getBoundingClientRect() ?? {width: 0, height: 0};
             initial = orientation === 'horizontal' ? {mousePos: event.clientX, treeSize: treeWidth} : {mousePos: event.clientY, treeSize: treeHeight};
         }
         const currentMousePos = orientation === 'horizontal' ? event.clientX : event.clientY;
