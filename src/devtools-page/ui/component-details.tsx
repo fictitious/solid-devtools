@@ -6,6 +6,8 @@ import type {SerializedValue, SerializedArray, SerializedObject} from '../../cha
 import {ChannelContext} from './channel-context';
 import {SelectedComponentContext} from './selected-component-context';
 import {buttonClass} from './common-styles';
+import svgExpanded from './assets/expanded.svg';
+import svgCollapsed from './assets/collapsed.svg';
 
 const toolbarButtonClass = `${buttonClass} mx-3 flex-none`;
 
@@ -18,7 +20,7 @@ interface ComponentPropLineProps {
 }
 
 const ComponentPropLine: Component<ComponentPropLineProps> = props => {
-    const indent = 2 * props.level;
+    const indent = 1.5 * props.level;
     return <div class="w-full flex" style={{'padding-left': `${indent}em`}}>
         <div class="grow-0 shrink-0 basis-4 w-4">{props.expandButton && props.expandButton()}</div>
         <div class="grow-0 shrink-0 basis-auto text-ellipsis overflow-hidden">{props.name}</div>
@@ -70,7 +72,7 @@ const ComponentPropList: Component<ComponentPropListProps> = props =>
         if (canExpand(value)) {
             const [expanded, setExpanded] = createSignal(false);
             const toggleExpanded = () => setExpanded(oldExpanded => !oldExpanded);
-            propLineProps.expandButton = () => <span onclick={toggleExpanded}>{expanded() ? 'v' : '>'}</span>;
+            propLineProps.expandButton = () => <svg onclick={toggleExpanded} class="w-4 h-4"><use href={`${expanded() ? svgExpanded : svgCollapsed}#main`}></use></svg>;
             nested = () => <Show when={expanded()}><ComponentPropList {...{level: props.level + 1, items: valueItems(value)}} /></Show>;
         }
         return <>

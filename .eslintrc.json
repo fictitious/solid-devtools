@@ -90,6 +90,13 @@
         }        
     }, {
         "files": [
+            "./src/devtools-page/ui/assets.d.ts"
+        ], 
+        "rules": {
+            "import/no-default-export": "off"
+        }
+    }, {
+        "files": [
             "./postcss.config.js",
             "./rollup.config.js",
             "./vite.config.js",
