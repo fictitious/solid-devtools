@@ -1,5 +1,43 @@
 
 
+### intro
+
+This is a work-in-progress to explore possible approaches for building devtools for solid
+
+It requires modified version of solid, maintained here in the same monorepo - modifications to core solid code are described [here](-> add link)
+
+It does not rely on the development mode provided by solid, and it does not (yet) include the existing [solid-debugger](-> add link). It has its own hook and wrappers, the reasons for that are:
+- the ability to use devtools on a production site might turn out to be useful
+- the expectation set by react devtools is that one can see the component tree without doing anything special for that in the user code
+- when the devtools tab is not open, the wrappers are just no-op functions that return immediately, there seems to be [no impact on the benchmark](-> add link) in production mode even when the wrappers are always in place
+
+The easiest way to try it is to clone the monorepo, follow [build instructions](-> add link) and run the examples provided in the same monorepo (add or list the examples)
+
+[Video goes here]
+
+### concepts
+
+component tree 
+
+[diagram goes here]
+
+how to show it in the devtools panel
+
+hook + registry (mention wrappers with link to detailed wrapper explanation)
+channel
+panel + registry mirror
+
+[diagram goes here]
+
+### wrappers
+
+Detailed description of modifications to the solid code
+
+### build instructions
+
+
+
+==== below is an older variant
 ### component tree
 
 For devtools, the expectation is set by the react devtools - it must show component tree and allow
