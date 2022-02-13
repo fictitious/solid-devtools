@@ -43,7 +43,7 @@ function propLine(level: number, name: string, value: SerializedValue): Componen
 function inlineStringValue(value: SerializedValue, style: 'short' | 'long'): string {
     switch (value.t) {
         case 'array':
-            return '[' + value.v.map((v, i) => `${i}: ${inlineStringValue(v, 'short')}`).join(', ') + ']';
+            return '[' + fixArray(value.v).map((v, i) => `${i}: ${inlineStringValue(v, 'short')}`).join(', ') + ']';
         case 'object':
             return '{' + Object.entries(value.v).map(([n, v]) => `${n}: ${inlineStringValue(v, 'short')}`).join(', ') + '}';
         case 'circular':
@@ -83,6 +83,20 @@ const ComponentPropList: Component<ComponentPropListProps> = props =>
     }}</For>
 ;
 
+function fixArray(a: SerializedValue[]): SerializedValue[] {
+    // JSON.stringify / JSON.parse do not preserve sparse arrays
+    // that is, map will skip empty elements in the original array
+    // but those elements will have null values after going through JSON.stringify / JSON.parse
+    // and will no more be skipped by map
+    // fix that
+    const fixed: SerializedValue[] = [];
+    a.forEach((e, i) => {
+        if (e) {
+            fixed[i] = e;
+        }
+    });
+    return fixed;
+}
 
 function canExpand(value: SerializedValue): value is SerializedArray | SerializedObject {
     return value.t === 'array' && value.v.length > 0 || value.t === 'object' && Object.keys(value.v).length > 0;
@@ -91,7 +105,7 @@ function canExpand(value: SerializedValue): value is SerializedArray | Serialize
 function valueItems(value: SerializedArray | SerializedObject): ItemsFunc {
     switch (value.t) {
         case 'array':
-            return () => value.v.map((v, i) => ({name: i.toString(), value: v}));
+            return () => fixArray(value.v).map((v, i) => ({name: i.toString(), value: v}));
         case 'object':
             return () => Object.entries(value.v).map(([n, v]) => ({name: n, value: v}));
     }
