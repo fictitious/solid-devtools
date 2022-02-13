@@ -43,7 +43,9 @@ const ComponentTree: Component<{roots: Accessor<RootData[]>}> = props =>
             <div class="py-0.5 mx-3 px-3 border border-blue-400">Placeholder</div>
         </div>
         <div class="flex-auto w-full overflow-auto text-xs leading-snug">
-            <For each={props.roots()}>{root => <RootUI {...root} />}</For>
+            <div class="min-w-fit">
+                <For each={props.roots()}>{root => <RootUI {...root} />}</For>
+            </div>
         </div>
     </div>
 ;
