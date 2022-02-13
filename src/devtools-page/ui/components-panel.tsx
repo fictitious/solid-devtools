@@ -5,18 +5,21 @@ import type {ComponentDisposed} from '../../channel/channel-message-types';
 import type {ConnectionState} from '../connection/connection-state-types';
 import type {RootsData} from '../data/component-data-types';
 import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
+import type {Options} from '../../options/options-types';
 import {LOCAL_STORAGE_DEVTOOLS_COMPONENTS_PANEL_RESIZE_KEY} from '../storage-keys';
 import type {ComponentData} from '../data/component-data-types';
-import {ChannelContext} from './channel-context';
+import {ChannelContext} from './contexts/channel-context';
+import {SelectedComponentContext} from './contexts/selected-component-context';
+import {OptionsContext} from './contexts/options-context';
 import {buttonClass} from './common-styles';
 import {ComponentTree} from './component-tree';
 import {ComponentDetails} from './component-details';
-import {SelectedComponentContext} from './selected-component-context';
 
 interface ComponentsPanelProps {
     connectionState: ConnectionState;
     rootsData: RootsData;
     registryMirror: RegistryMirror;
+    options: Options;
 }
 
 const TimeoutMessage: Component = () => {
@@ -134,17 +137,21 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
     return <div ref={outerContainer} classList={{'text-sm': true, 'h-full': true, 'w-full': true, 'flex': true, 'sm:flex-row': true, 'flex-col': true, 'sm:cursor-ew-resize': resizing(), 'cursor-ns-resize': resizing()}}>
         <ConnectionStateSwitch connectionState={props.connectionState}>
             <SelectedComponentContext.Provider value={{selectedComponent, setSelectedComponent}}>
-                <div ref={treeContainer} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
-                    <ComponentTree {...{roots: props.rootsData.roots}} />
-                </div>
+                <OptionsContext.Provider value={props.options}>
 
-                <div class="grow-0 shrink-0 basis-0 relative">
-                    <div onMouseDown={[setResizing, true]} class="absolute sm:h-full h-[5px] sm:w-[5px] w-full sm:-left-[2px] sm:top-0 -top-[2px] sm:cursor-ew-resize cursor-ns-resize"></div>
-                </div>
+                    <div ref={treeContainer} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
+                        <ComponentTree {...{roots: props.rootsData.roots}} />
+                    </div>
 
-                <div class="overflow-auto grow shrink sm:basis-1/3 basis:1/2 sm:border-l sm:border-t-0 border-t">
-                    <ComponentDetails />
-                </div>
+                    <div class="grow-0 shrink-0 basis-0 relative">
+                        <div onMouseDown={[setResizing, true]} class="absolute sm:h-full h-[5px] sm:w-[5px] w-full sm:-left-[2px] sm:top-0 -top-[2px] sm:cursor-ew-resize cursor-ns-resize"></div>
+                    </div>
+
+                    <div class="overflow-auto grow shrink sm:basis-1/3 basis:1/2 sm:border-l sm:border-t-0 border-t">
+                        <ComponentDetails />
+                    </div>
+
+                </OptionsContext.Provider>
             </SelectedComponentContext.Provider>
         </ConnectionStateSwitch>
     </div>;

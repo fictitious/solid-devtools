@@ -42,5 +42,5 @@ if ('text/html' === document.contentType) {
 
 void loadOptions()
 .then(options => {
-    sessionStorage.setItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, options.exposeDomNodeIds ? 'true' : '');
+    sessionStorage.setItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, options.exposeIds ? 'true' : '');
 });

@@ -22,7 +22,7 @@ function createPanels(connectionState: ConnectionState, rootsData: RootsData, re
                 chrome.devtools.inspectedWindow.eval(
                     `sessionStorage.setItem('${SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY}', 'true')`
                 );
-                renderPanelOnce(panelWindow, () => <ComponentsPanel connectionState={connectionState} rootsData={rootsData} registryMirror={registryMirror} />);
+                renderPanelOnce(panelWindow, () => <ComponentsPanel connectionState={connectionState} rootsData={rootsData} registryMirror={registryMirror} options={options}/>);
             });
         }
     );

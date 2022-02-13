@@ -3,7 +3,7 @@
 import type {Accessor, Setter} from 'solid-js';
 import {createContext} from 'solid-js';
 
-import type {ComponentData} from '../data/component-data-types';
+import type {ComponentData} from '../../data/component-data-types';
 
 interface SelectedComponent {
     selectedComponent: Accessor<ComponentData | undefined>;

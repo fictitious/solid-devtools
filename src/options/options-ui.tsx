@@ -31,7 +31,7 @@ const OptionsForm: Component<{options: Options}> = props => {
     return <form>
         <fieldset style="border: none">
             <legend style="font-size: medium">Internal debugging options</legend>
-            {optionsCheckbox('exposeDomNodeIds', `Expose internal dom node id as "data-devtools-id" attribute`)}
+            {optionsCheckbox('exposeIds', `Expose internal ids`)}
             {optionsCheckbox('showLogPanel', `Show internal debug log panel`)}
             {optionsCheckbox('logAllMessages', `Log all messages from page`)}
         </fieldset>

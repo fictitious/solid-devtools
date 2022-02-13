@@ -29,8 +29,13 @@ interface CreateComponent {
 }
 function createComponent({id, name, props}: CreateComponent): ComponentMirror {
     const [getChildren, setChildren] = createSignal<ComponentData[]>([]);
-    const componentData: ComponentData = {id, name, props, getChildren, setChildren, level: () => undefined};
+    const componentData: ComponentData = {id, name: fixHotName(name), rawName: name, props, getChildren, setChildren, level: () => undefined};
     return {id, name, props, componentData, result: [], children: []};
+}
+
+const hotPrefix = '_Hot$$';
+function fixHotName(name: string): string {
+    return name.startsWith(hotPrefix) ? name.substring(hotPrefix.length) : name;
 }
 
 function updateChildrenData(childrenData: ComponentChildrenData, children: ComponentMirror[]): void {

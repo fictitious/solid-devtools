@@ -3,8 +3,8 @@ import type {Component, JSX} from 'solid-js';
 import {Show, For, createSignal, useContext} from 'solid-js';
 
 import type {SerializedValue, SerializedArray, SerializedObject} from '../../channel/channel-transport-types';
-import {ChannelContext} from './channel-context';
-import {SelectedComponentContext} from './selected-component-context';
+import {ChannelContext} from './contexts/channel-context';
+import {SelectedComponentContext} from './contexts/selected-component-context';
 import {buttonClass} from './common-styles';
 import svgExpanded from './assets/expanded.svg';
 import svgCollapsed from './assets/collapsed.svg';
@@ -21,7 +21,7 @@ interface ComponentPropLineProps {
 
 const ComponentPropLine: Component<ComponentPropLineProps> = props => {
     const indent = 1.5 * props.level;
-    return <div class="w-full flex" style={{'padding-left': `${indent}em`}}>
+    return <div class="w-full flex cursor-default" style={{'padding-left': `${indent}em`}}>
         <div class="grow-0 shrink-0 basis-4 w-4">{props.expandButton && props.expandButton()}</div>
         <div class="grow-0 shrink-0 basis-auto text-ellipsis overflow-hidden">{props.name}</div>
         <div class="mr-2">:</div>
@@ -114,7 +114,7 @@ const ComponentDetails: Component = () => {
     return <div class="h-full w-full flex flex-col">
         <div class="w-full flex-none flex flex-row py-1 text-xs">
             <Show when={selectedComponent()}>{component => <>
-                <div class="py-0.5 mx-3 px-3 w-16 flex-auto text-solid-light text-ellipsis overflow-hidden">{component.name}</div>
+                <div class="py-0.5 mx-3 px-3 w-16 flex-auto text-solid-light text-ellipsis overflow-hidden cursor-default">{component.name}</div>
                 <button onclick={[debugClick, component.id]} class={toolbarButtonClass}>debugger</button>
             </>}</Show>
         </div>

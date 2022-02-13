@@ -21,6 +21,7 @@ export interface RootData extends ComponentChildrenData {
 export interface ComponentData extends ComponentChildrenData {
     id: string;
     name: string;
+    rawName: string;
     props: SerializedValue;
 }
 

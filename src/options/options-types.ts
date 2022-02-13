@@ -1,6 +1,6 @@
 
 export interface Options {
-    exposeDomNodeIds?: boolean;
+    exposeIds?: boolean;
     showLogPanel?: boolean;
     logAllMessages?: boolean;
 }
