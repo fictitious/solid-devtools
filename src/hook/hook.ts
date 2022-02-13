@@ -61,17 +61,6 @@ class HookImpl extends HookBaseImpl implements Hook {
             previousDevtoolsInstanceId: this.previousDevtoolsInstanceId
         };
         this.previousDevtoolsInstanceId = hello.devtoolsInstanceId;
-        void Promise.resolve().then(() => this.setupChannel(hello, helloAnswer, channel));
-        return helloAnswer;
-    }
-
-    setupChannel(hello: Hello, helloAnswer: HelloAnswer, channel: Channel<'page'>): void {
-        if (canReconnect(hello, helloAnswer)) {
-            this.registry.reconnect(channel);
-        } else {
-            this.registry.connect(channel);
-        }
-        // TODO: figure out when to call this.deactivate()
 
         channel.addListener('devtoolsDisconnect', () => {
             this.registry.disconnect();
@@ -79,6 +68,22 @@ class HookImpl extends HookBaseImpl implements Hook {
         });
 
         this.addChannelListeners(channel);
+        // TODO: figure out when to call this.deactivate()
+
+        void Promise.resolve().then(
+            () => this.onChannelReady(hello, helloAnswer, channel) // channel is not ready until after the helloAnswer is sent
+        );
+        // and the HookBaseImpl (stub hook) does not have channel at all but also needs to send helloAnswer
+
+        return helloAnswer;
+    }
+
+    onChannelReady(hello: Hello, helloAnswer: HelloAnswer, channel: Channel<'page'>): void {
+        if (canReconnect(hello, helloAnswer)) {
+            this.registry.reconnect(channel);
+        } else {
+            this.registry.connect(channel);
+        }
     }
 
     addChannelListeners(channel: Channel<'page'>) {
