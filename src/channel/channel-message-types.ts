@@ -25,6 +25,10 @@ export interface RegistryStateAck {
     messageSerial: number;
 }
 
+export interface HighlightComponent {
+    componentId: string;
+}
+
 export interface DebugBreak {
     componentId: string;
 }
@@ -99,6 +103,8 @@ const fromDevtools = messages({
     hello: message<Hello>(),
     devtoolsDisconnect: message(),
     registryStateAck: message<RegistryStateAck>(),
+    highlightComponent: message<HighlightComponent>(),
+    stopHighlightComponent: message(),
     debugBreak: message<DebugBreak>(),
     'test-message': message()
 });

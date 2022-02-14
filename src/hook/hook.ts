@@ -14,6 +14,7 @@ import {wrapComponent} from './registry/component-wrapper';
 import {createInsertParentWrapper} from './registry/insert-parent-wrapper';
 import type {Hook} from './hook-types';
 import {HookBaseImpl, installHook} from './hook-base';
+import {highlightComponent, stopHighlightComponent} from './highlighter/highlighter';
 
 // this is the script to inject into the page when solid devtools panel is open
 
@@ -91,6 +92,8 @@ class HookImpl extends HookBaseImpl implements Hook {
             console.log('test-message', this.registry);
         });
         channel.addListener('registryStateAck', ({messageSerial}) => this.registry.messageAck(messageSerial));
+        channel.addListener('highlightComponent', ({componentId}) => highlightComponent(componentId, this.registry));
+        channel.addListener('stopHighlightComponent', stopHighlightComponent);
         channel.addListener('debugBreak', ({componentId}) => {
             const componentItem = this.registry.getComponent(componentId);
             componentItem?.setDebugBreak(true);

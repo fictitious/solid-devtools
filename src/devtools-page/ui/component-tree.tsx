@@ -5,6 +5,7 @@ import {For, useContext} from 'solid-js';
 import type {RootData, ComponentData} from '../data/component-data-types';
 import {SelectedComponentContext} from './contexts/selected-component-context';
 import {OptionsContext} from './contexts/options-context';
+import {ChannelContext} from './contexts/channel-context';
 
 const ComponentUI: Component<ComponentData> = componentData => {
     const level = componentData.level() ?? 0;
@@ -12,9 +13,14 @@ const ComponentUI: Component<ComponentData> = componentData => {
     const {selectedComponent, setSelectedComponent} = useContext(SelectedComponentContext)!;
     const isSelected = () => componentData.id === selectedComponent()?.id;
     const exposeIds = useContext(OptionsContext)?.exposeIds;
+    const channel = useContext(ChannelContext)!;
+    const onMouseEnter = (cd: ComponentData) => channel.send('highlightComponent', {componentId: cd.id});
+    const onMouseLeave = () => channel.send('stopHighlightComponent', {});
     return <>
         <div
             onclick={[setSelectedComponent, componentData]}
+            onmouseenter={[onMouseEnter, componentData]}
+            onmouseleave={onMouseLeave}
             classList={{
                 'cursor-default': true,
                 'bg-slate-300': isSelected(),

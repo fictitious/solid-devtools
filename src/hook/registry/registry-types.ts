@@ -28,6 +28,7 @@ export interface Registry extends RegistryConnection {
     domNodeInserted(p: Omit<DomNodeInserted, 'messageSerial'>): void;
 
     getComponent(id: string): ComponentItem | undefined;
+    getDomNode(id: string): Node & NodeExtra | undefined;
 }
 
 export type NodeExtra = {[solidDevtoolsKey]?: NodeExtraData};

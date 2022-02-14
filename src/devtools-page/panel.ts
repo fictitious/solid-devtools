@@ -1,4 +1,4 @@
-// copied from react devtools panel.js
+// copied from React Devtools panel.js
 // this is the main script for panel.html
 
 let hasInjectedStyles = false;

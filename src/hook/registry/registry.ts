@@ -42,6 +42,10 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
         return this.componentMap.get(id);
     }
 
+    getDomNode(id: string): Node & NodeExtra | undefined {
+        return this.domNodeMap.get(id);
+    }
+
     registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component> {
         if (result instanceof Node) { // TODO handle primitive types (string / number etc - needs more patching in solid insertParent)
             const node = this.registerDomNode(result as Node & NodeExtra);
