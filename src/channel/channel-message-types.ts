@@ -50,6 +50,7 @@ export interface RegistryStateMessageBase {
 export interface ComponentRendered extends RegistryStateMessageBase {
     id: string;
     name: string;
+    rawName: string;
     props: SerializedValue;
 }
 

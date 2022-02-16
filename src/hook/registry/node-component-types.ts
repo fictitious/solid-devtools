@@ -13,6 +13,7 @@ export type ComponentItemResult = string | ComponentItemResult[] | undefined;
 export interface ComponentItemBase {
     id: string;
     name: string;
+    rawName: string;
     props?: {};
     result: ComponentItemResult[];
 }

@@ -14,4 +14,9 @@ function getComponentResultIds(component: ComponentItem): string[] {
     return ids;
 }
 
-export {getComponentResultIds};
+const hotPrefix = '_Hot$$';
+function removeHotPrefix(name: string): string {
+    return name.startsWith(hotPrefix) ? name.substring(hotPrefix.length) : name;
+}
+
+export {getComponentResultIds, removeHotPrefix};

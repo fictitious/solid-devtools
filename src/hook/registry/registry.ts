@@ -6,6 +6,7 @@ import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-messa
 import type {Channel} from '../../channel/channel-types';
 import {serializeValue} from '../../channel/serialized-value';
 import {findRegisteredDescendantsOrSelf} from './node-functions';
+import {removeHotPrefix} from './component-functions';
 import type {ComponentItem, ComponentProps} from './node-component-types';
 import type {Registry, NodeExtra} from './registry-types';
 import {solidDevtoolsKey} from './registry-types';
@@ -27,9 +28,9 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem {
         const id = newComponentId();
         const [debugBreak, setDebugBreak] = solidInstance.createSignal(false);
-        const componentItem: ComponentItem = {id, comp, name: comp.name, props, result: [], debugBreak, setDebugBreak};
+        const componentItem: ComponentItem = {id, comp, name: removeHotPrefix(comp.name), rawName: comp.name, props, result: [], debugBreak, setDebugBreak};
         this.componentMap.set(id, componentItem);
-        this.sendRegistryMessage('componentRendered', {id, name: comp.name, props: serializeValue(props)});
+        this.sendRegistryMessage('componentRendered', {id, name: componentItem.name, rawName: componentItem.rawName, props: serializeValue(props)});
         return componentItem;
     }
 
@@ -153,8 +154,8 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
             }
         }
         for (const componentItem of this.componentMap.values()) {
-            const {id, name, result} = componentItem;
-            const message = {id, name, result, props: serializeValue(componentItem.props)};
+            const {id, name, rawName, result} = componentItem;
+            const message = {id, name, rawName, result, props: serializeValue(componentItem.props)};
             channel.send('snapshotComponent', message);
         }
         rootNodes.forEach(n => sendDomNodeAppendedSnapshot(n, channel));
