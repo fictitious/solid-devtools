@@ -2,7 +2,8 @@
 
 import type {Message, Transport} from './channel-transport-types';
 import type {Channel} from './channel-types';
-import {EventEmitterImpl} from './event-emitter';
+import type {Listener} from '../channel/event-emitter-types';
+import {EventEmitterImpl, listenerListAdd, listenerListRemove, listenerListEmit} from '../channel/event-emitter';
 
 const BATCH_DURATION_MILLISECONDS = 100;
 
@@ -12,6 +13,7 @@ class ChannelImpl extends EventEmitterImpl {
     isShutdown: boolean;
     messageQueue: Message[];
     timeoutID: ReturnType<typeof setTimeout> | undefined;
+    shutdownListeners: Listener[];
 
     constructor(
         public side: 'devtools' | 'page',
@@ -21,6 +23,7 @@ class ChannelImpl extends EventEmitterImpl {
         this.transportUnsubscribe = transport.subscribe(message => this.emit(message));
         this.isShutdown = false;
         this.messageQueue = [];
+        this.shutdownListeners = [];
     }
 
     emit(message: Message) {
@@ -39,6 +42,14 @@ class ChannelImpl extends EventEmitterImpl {
         }
     }
 
+    addShutdownListener(listener: Listener): void {
+        listenerListAdd(this.shutdownListeners, listener);
+    }
+
+    removeShutdownListener(listener: Listener): void {
+        listenerListRemove(this.shutdownListeners, listener);
+    }
+
     shutdown() {
         if (!this.isShutdown) {
             this.isShutdown = true;
@@ -50,6 +61,8 @@ class ChannelImpl extends EventEmitterImpl {
                 this.flush();
             } while (this.messageQueue.length);
             this.clearFlushTimeout();
+            listenerListEmit(this.shutdownListeners, {});
+            this.shutdownListeners = [];
         }
     }
 

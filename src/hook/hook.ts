@@ -69,7 +69,7 @@ class HookImpl extends HookBaseImpl implements Hook {
         });
 
         this.addChannelListeners(channel);
-        // TODO: figure out when to call this.deactivate()
+        // TODO: figure out when to call this.deactivate() - ? in channel.addShutdownListener set 5 min? timer for it, clear timer in connectChannel
 
         void Promise.resolve().then(
             () => this.onChannelReady(hello, helloAnswer, channel) // channel is not ready until after the helloAnswer is sent
