@@ -69,10 +69,18 @@ function setupMessagePassthrough(tabId: string, {devtoolsPort, contentScriptPort
     contentScriptPort.postMessage(messageFromDevtools('hello', helloData));
 
     function devtoolsListener(message: unknown) {
-        contentScriptPort.postMessage(message);
+        try {
+            contentScriptPort.postMessage(message);
+        } catch {
+            // ignore
+        }
     }
     function contentScriptListener(message: unknown) {
-        devtoolsPort.postMessage(message);
+        try {
+            devtoolsPort.postMessage(message);
+        } catch {
+            // ignore
+        }
     }
     function shutdown() {
         delete passthroughs[tabId]; // this avoids executing on-panel-deactivated.js script
