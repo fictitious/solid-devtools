@@ -56,7 +56,13 @@ class ConnectionStateImpl implements ConnectionState {
         logger('debug', `ConnectionStateImpl: initPort tabId:${tabId} devtoolsInstanceId:${this.devtoolsInstanceId} previousHookInstanceId:${this.previousHookInstanceId ?? 'none'}`);
         const {devtoolsInstanceId, previousHookInstanceId} = this;
         const portName = encodePortName({tabId, devtoolsInstanceId, previousHookInstanceId});
-        this.port = chrome.runtime.connect({name: portName});
+        try {
+            this.port = chrome.runtime.connect({name: portName});
+        } catch {
+            // the one that I've seen here is "Extension context invalidated" which means extension was updated and this devtools page instance is not functional any more
+            this.setChannelState('disconnected');
+            return;
+        }
         this.port.onDisconnect.addListener(disconnectListener);
         this.port.onMessage.addListener(connectionListener);
         this.setChannelState('connecting');
