@@ -3,4 +3,5 @@ export interface Options {
     exposeIds?: boolean;
     showLogPanel?: boolean;
     logAllMessages?: boolean;
+    exposeDebuggerHack?: boolean;
 }

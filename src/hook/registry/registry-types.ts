@@ -31,4 +31,9 @@ export interface Registry extends RegistryConnection {
     getDomNode(id: string): Node & NodeExtra | undefined;
 }
 
+export interface RegistryOptions {
+    exposeNodeIds?: boolean;
+    exposeDebuggerHack?: boolean;
+}
+
 export type NodeExtra = {[solidDevtoolsKey]?: NodeExtraData};

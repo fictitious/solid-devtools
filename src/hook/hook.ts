@@ -7,7 +7,7 @@ import type {Message} from '../channel/channel-transport-types';
 import type {Channel} from '../channel/channel-types';
 import {createChannel} from '../channel/channel';
 import {canReconnect} from '../channel/can-reconnect';
-import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from '../devtools-page/storage-keys';
+import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, SESSION_STORAGE_DEVTOOLS_EXPOSE_DEBUGGER_HACK} from '../devtools-page/storage-keys';
 import type {Registry} from './registry/registry-types';
 import {createRegistry} from './registry/registry';
 import {wrapComponent} from './registry/component-wrapper';
@@ -33,8 +33,9 @@ class HookImpl extends HookBaseImpl implements Hook {
     constructor() {
         super();
         this.hookInstanceId = nanoid();
-        const exposeNodeIds = sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY);
-        this.registry = createRegistry(!!exposeNodeIds);
+        const exposeNodeIds = !!sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY);
+        const exposeDebuggerHack = !!sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_DEBUGGER_HACK);
+        this.registry = createRegistry({exposeNodeIds, exposeDebuggerHack});
 
         this.updateComponentWrappers = [];
         this.updateInsertParentWrappers = [];
@@ -99,8 +100,10 @@ class HookImpl extends HookBaseImpl implements Hook {
         channel.addListener('stopInspectingElements', stopInspecting);
         channel.addListener('debugBreak', ({componentId}) => {
             const componentItem = this.registry.getComponent(componentId);
-            componentItem?.setDebugBreak(true);
-            setTimeout(() => componentItem?.setDebugBreak(false), 100);
+            if (componentItem?.setDebugBreak) {
+                componentItem.setDebugBreak(true);
+                setTimeout(() => componentItem.setDebugBreak?.(false), 100);
+            }
         });
     }
 

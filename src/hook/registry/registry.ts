@@ -1,5 +1,5 @@
 
-import type {Component} from 'solid-js';
+import type {Accessor, Setter, Component} from 'solid-js';
 import type {RegisterSolidInstance as SolidInstance} from 'solid-js/devtools-api';
 
 import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
@@ -8,7 +8,7 @@ import {serializeValue} from '../../channel/serialized-value';
 import {findRegisteredDescendantsOrSelf} from './node-functions';
 import {removeHotPrefix} from './component-functions';
 import type {ComponentItem, ComponentProps} from './node-component-types';
-import type {Registry, NodeExtra} from './registry-types';
+import type {Registry, NodeExtra, RegistryOptions} from './registry-types';
 import {solidDevtoolsKey} from './registry-types';
 import {RegistryConnectionImpl} from './registry-connection';
 
@@ -18,7 +18,7 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
     domNodeMap: Map<string, Node & NodeExtra>;
 
     constructor(
-        public exposeNodeIds: boolean
+        public options: RegistryOptions
     ) {
         super();
         this.componentMap = new Map();
@@ -27,7 +27,11 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
 
     registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem {
         const id = newComponentId();
-        const [debugBreak, setDebugBreak] = solidInstance.createSignal(false);
+        let debugBreak: Accessor<boolean> | undefined;
+        let setDebugBreak: Setter<boolean> | undefined;
+        if (this.options.exposeDebuggerHack) {
+            [debugBreak, setDebugBreak] = solidInstance.createSignal(false);
+        }
         const componentItem: ComponentItem = {id, comp, name: removeHotPrefix(comp.name), rawName: comp.name, props, result: [], debugBreak, setDebugBreak};
         this.componentMap.set(id, componentItem);
         this.sendRegistryMessage('componentRendered', {id, name: componentItem.name, rawName: componentItem.rawName, props: serializeValue(props)});
@@ -80,7 +84,7 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
         if (!nodeExtra) {
             const id = newDomNodeId();
             node[solidDevtoolsKey] = {id};
-            if (this.exposeNodeIds) {
+            if (this.options.exposeNodeIds) {
                 (node instanceof HTMLElement) && node.setAttribute('data-devtools-id', id);
             }
 
@@ -182,8 +186,8 @@ function newDomNodeId(): string {
     return `d-${++nextId}`;
 }
 
-function createRegistry(exposeNodeIds: boolean): Registry {
-    return new RegistryImpl(exposeNodeIds);
+function createRegistry(options: RegistryOptions): Registry {
+    return new RegistryImpl(options);
 }
 
 export {createRegistry};

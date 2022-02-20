@@ -19,6 +19,6 @@ export interface ComponentItemBase {
 }
 export interface ComponentItem extends ComponentItemBase {
     comp: Component;
-    debugBreak: Accessor<boolean>;
-    setDebugBreak: Setter<boolean>;
+    debugBreak?: Accessor<boolean>;
+    setDebugBreak?: Setter<boolean>;
 }

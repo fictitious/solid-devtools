@@ -17,11 +17,15 @@ function wrapComponent(comp: Component, solidInstance: SolidInstance, registry: 
             });
 
             const compMemo = solidInstance.createMemo(() => {
-                const debugBreak = componentItem.debugBreak();
-                return solidInstance.untrack(() => {
-                    if (debugBreak) debugger;
-                    return comp(props);
-                });
+                if (componentItem.debugBreak) {
+                    const debugBreak = componentItem.debugBreak();
+                    return solidInstance.untrack(() => {
+                        if (debugBreak) debugger;
+                        return comp(props);
+                    });
+                } else {
+                    return solidInstance.untrack(() => comp(props));
+                }
             });
 
             return wrapComponentResult(componentItem, compMemo(), undefined, registry);

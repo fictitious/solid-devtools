@@ -4,6 +4,7 @@ import {Show, For, createSignal, useContext} from 'solid-js';
 
 import type {SerializedValue, SerializedArray, SerializedObject} from '../../channel/channel-transport-types';
 import {ChannelContext} from './contexts/channel-context';
+import {OptionsContext} from './contexts/options-context';
 import {SelectedComponentContext} from './contexts/selected-component-context';
 import {buttonClass} from './common-styles';
 import svgExpanded from './assets/expanded.svg';
@@ -121,6 +122,7 @@ const ComponentProps: Component<{props: SerializedValue}> = ({props}) => {
 
 const ComponentDetails: Component = () => {
 
+    const options = useContext(OptionsContext);
     const channel = useContext(ChannelContext);
     const {selectedComponent} = useContext(SelectedComponentContext)!;
     const debugClick = (componentId: string) => channel?.send('debugBreak', {componentId});
@@ -129,7 +131,7 @@ const ComponentDetails: Component = () => {
         <div class="w-full flex-none flex flex-row py-1 text-xs">
             <Show when={selectedComponent()}>{component => <>
                 <div class="py-0.5 mx-3 px-3 w-16 flex-auto text-solid-light text-ellipsis overflow-hidden cursor-default">{component.name}</div>
-                <button onclick={[debugClick, component.id]} class={toolbarButtonClass}>debugger</button>
+                <Show when={options?.exposeDebuggerHack}><button onclick={[debugClick, component.id]} class={toolbarButtonClass}>debugger</button></Show>
             </>}</Show>
         </div>
         <div class="flex-auto w-full overflow-auto text-xs leading-snug">
