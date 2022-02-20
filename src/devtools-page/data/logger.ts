@@ -20,11 +20,6 @@ class DebugLogImpl implements DebugLog {
     }
 
     log(type: LogDebugMessage['type'], message: string): void {
-        if (type === 'error') {
-            console.error(message);
-        } else if (type === 'warn') {
-            console.warn(message);
-        }
         this.addRecord({kind: 'debugMessage', type, message});
     }
 
