@@ -5,6 +5,7 @@ import {createBackgroundPassthrough} from './background-passthrough';
 
 const workerSelf = self as unknown as ServiceWorkerGlobalScope;
 workerSelf.addEventListener('install', event => event.waitUntil(workerSelf.skipWaiting()));
+workerSelf.addEventListener('activate', event => event.waitUntil(workerSelf.clients.claim()));
 
 createBackgroundPassthrough();
 
