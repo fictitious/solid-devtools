@@ -24,7 +24,8 @@ function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected:
             `({solidRegistered: !!window.${devtoolsHookName}?.solidInstance, hookType: window.${devtoolsHookName}?.hookType})`,
             function({solidRegistered = false, hookType = ''}: {solidRegistered?: boolean; hookType?: string} = {}, exceptionInfo) {
                 if (exceptionInfo) {
-                    console.error(`inspectedWindow.eval failed on creating connection state: ${exceptionInfo.description}`);
+                    console.error(`inspectedWindow.eval failed on creating connection state: ${exceptionInfo.description}`, exceptionInfo);
+                    return;
                 }
                 void loadOptions()
                 .then(options => {
