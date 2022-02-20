@@ -1,5 +1,5 @@
 import type {Component} from 'solid-js';
-import {createSignal, createEffect, onMount, Show, Switch, Match} from 'solid-js';
+import {createSignal, createEffect, Show, Switch, Match} from 'solid-js';
 
 import type {ConnectionState} from '../connection/connection-state-types';
 import type {RootsData} from '../data/component-data-types';
@@ -23,7 +23,7 @@ interface ComponentsPanelProps {
 
 const TimeoutMessage: Component = () => {
     const [visible, setVisible] = createSignal(false);
-    const timeoutSeconds = 8;
+    const timeoutSeconds = 18;
     createEffect(() => setTimeout(() => setVisible(true), timeoutSeconds * 1000));
     return <Show when={visible()}><p>Seems like something went wrong. Try to close the browser window and open again.</p></Show>;
 };
@@ -71,39 +71,41 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
     const SM_MIN_WIDTH_PIXELS = 640; // sm tailwindcss breakpoint
     const MIN_SIZE_PIXELS = 50; // min width/height for tree/props panels
     let outerContainer!: HTMLDivElement;
-    let treeContainer: HTMLDivElement | undefined;
     const [resizing, setResizing] = createSignal(false);
 
     const ratios = loadResizeRatios() ?? {
         horizontal: 2/3, // the counterpart initial size is basis-1/3 for horizontal
         vertical: 1/2 // and basis-1/2 for vertical
     };
-    const setTreeSizeRatio = (orientation: 'horizontal' | 'vertical') => {
-        treeContainer?.style.setProperty(`--${orientation}-resize-percent`, `${ratios[orientation] * 100}%`);
+    const setTreeSizeRatio = (treeContainer: HTMLDivElement, orientation: 'horizontal' | 'vertical') => {
+        treeContainer.style.setProperty(`--${orientation}-resize-percent`, `${ratios[orientation] * 100}%`);
     };
-    onMount(() => {
-        setTreeSizeRatio('horizontal');
-        setTreeSizeRatio('vertical');
-    });
 
+    let onMouseMove: (event: MouseEvent) => void = () => {};
     let initial: {mousePos: number; treeSize: number} | undefined = undefined;
-    const onMouseMove = (event: MouseEvent) => {
-        event.preventDefault();
-        const {width: outerWidth, height: outerHeight} = outerContainer.getBoundingClientRect();
-        const orientation = outerWidth >= SM_MIN_WIDTH_PIXELS ? 'horizontal' : 'vertical';
-        if (!initial) {
-            const {width: treeWidth, height: treeHeight} = treeContainer?.getBoundingClientRect() ?? {width: 0, height: 0};
-            initial = orientation === 'horizontal' ? {mousePos: event.clientX, treeSize: treeWidth} : {mousePos: event.clientY, treeSize: treeHeight};
-        }
-        const currentMousePos = orientation === 'horizontal' ? event.clientX : event.clientY;
-        const outerSize = orientation === 'horizontal' ? outerWidth : outerHeight;
-        const newSize = initial.treeSize + (currentMousePos - initial.mousePos);
-        const maxSize = outerSize - MIN_SIZE_PIXELS;
-        if (newSize > MIN_SIZE_PIXELS && newSize < maxSize) {
-            ratios[orientation] = newSize / outerSize;
-            setTreeSizeRatio(orientation);
-        }
+
+    const initSplitter = (treeContainer: HTMLDivElement) => {
+        setTreeSizeRatio(treeContainer, 'horizontal');
+        setTreeSizeRatio(treeContainer, 'vertical');
+        onMouseMove = (event: MouseEvent) => {
+            event.preventDefault();
+            const {width: outerWidth, height: outerHeight} = outerContainer.getBoundingClientRect();
+            const orientation = outerWidth >= SM_MIN_WIDTH_PIXELS ? 'horizontal' : 'vertical';
+            if (!initial) {
+                const {width: treeWidth, height: treeHeight} = treeContainer.getBoundingClientRect() ?? {width: 0, height: 0};
+                initial = orientation === 'horizontal' ? {mousePos: event.clientX, treeSize: treeWidth} : {mousePos: event.clientY, treeSize: treeHeight};
+            }
+            const currentMousePos = orientation === 'horizontal' ? event.clientX : event.clientY;
+            const outerSize = orientation === 'horizontal' ? outerWidth : outerHeight;
+            const newSize = initial.treeSize + (currentMousePos - initial.mousePos);
+            const maxSize = outerSize - MIN_SIZE_PIXELS;
+            if (newSize > MIN_SIZE_PIXELS && newSize < maxSize) {
+                ratios[orientation] = newSize / outerSize;
+                setTreeSizeRatio(treeContainer, orientation);
+            }
+        };
     };
+
     const stopResizing = () => setResizing(false);
 
     createEffect(() => {
@@ -125,7 +127,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
             <SelectedComponentContext.Provider value={{selectedComponent, setSelectedComponent}}>
                 <OptionsContext.Provider value={props.options}>
 
-                    <div ref={treeContainer} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
+                    <div ref={initSplitter} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
                         <ComponentTree {...{roots: props.rootsData.roots, registryMirror: props.registryMirror}} />
                     </div>
 
