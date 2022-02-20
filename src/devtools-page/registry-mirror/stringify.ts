@@ -26,6 +26,8 @@ interface StringifiedComponentMirror { // references replaced with ids
 function prepareComponentForStringify(component: ComponentMirror): StringifiedComponentMirror {
     return {
         ...component,
+        name: component.componentData.name,
+        props: component.componentData.props,
         result: prepareComponentResultForStringify(component.result),
         componentParent: prepareComponentParentForStringify({parent: component.componentParent}),
         children: component.children.map(c => c.id)

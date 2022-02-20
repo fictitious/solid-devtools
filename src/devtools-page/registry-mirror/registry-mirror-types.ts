@@ -1,14 +1,11 @@
 
 import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
-import type {SerializedValue} from '../../channel/channel-transport-types';
 import type {RootData, ComponentData} from '../data/component-data-types';
 
 export type ComponentResultMirror = DomNodeMirror | ComponentResultMirror[] | undefined;
 
 export interface ComponentMirror {
     id: string;
-    name: string;
-    props: SerializedValue;
     result: ComponentResultMirror[];
     connectedNodeParentId?: string;
     componentParent?: ComponentParent;
@@ -56,6 +53,7 @@ export interface RegistryMirror {
     domNodeAppended(p: Omit<DomNodeAppended, 'messageSerial'>): void;
     domNodeInserted(p: Omit<DomNodeInserted, 'messageSerial'>): void;
 
+    getComponent(id: string): ComponentMirror | undefined;
     clear(): void;
 }
 

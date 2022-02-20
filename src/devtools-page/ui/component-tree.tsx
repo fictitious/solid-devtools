@@ -1,11 +1,17 @@
 
 import type {Accessor, Component} from 'solid-js';
-import {For, useContext} from 'solid-js';
+import {For, useContext, onCleanup} from 'solid-js';
 
+import type {ComponentDisposed, InspectComponentSelected} from '../../channel/channel-message-types';
 import type {RootData, ComponentData} from '../data/component-data-types';
+import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
 import {SelectedComponentContext} from './contexts/selected-component-context';
 import {OptionsContext} from './contexts/options-context';
 import {ChannelContext} from './contexts/channel-context';
+import {InspectElementsButton} from './inspect-elements-button';
+import {useChannelListener} from './use-channel-listener';
+
+const componentRowElements: Map<string, Element> = new Map();
 
 const ComponentUI: Component<ComponentData> = componentData => {
     const level = componentData.level() ?? 0;
@@ -16,8 +22,10 @@ const ComponentUI: Component<ComponentData> = componentData => {
     const channel = useContext(ChannelContext)!;
     const onMouseEnter = (cd: ComponentData) => channel.send('highlightComponent', {componentId: cd.id});
     const onMouseLeave = () => channel.send('stopHighlightComponent', {});
+    onCleanup(() => componentRowElements.delete(componentData.id));
     return <>
         <div
+            ref={element => componentRowElements.set(componentData.id, element)}
             onclick={[setSelectedComponent, componentData]}
             onmouseenter={[onMouseEnter, componentData]}
             onmouseleave={onMouseLeave}
@@ -31,7 +39,8 @@ const ComponentUI: Component<ComponentData> = componentData => {
             {componentText(componentData, exposeIds)}
         </div>
         <For each={componentData.getChildren()}>{component => <ComponentUI {...component} />}</For>
-    </>;
+    </>
+    ;
 };
 
 function componentText(componentData: ComponentData, exposeIds?: boolean): string {
@@ -43,10 +52,25 @@ const RootUI: Component<RootData> = rootData =>
     <For each={rootData.getChildren()}>{component => <ComponentUI {...component} />}</For>
 ;
 
-const ComponentTree: Component<{roots: Accessor<RootData[]>}> = props =>
-    <div class="h-full w-full flex flex-col">
+const ComponentTree: Component<{roots: Accessor<RootData[]>; registryMirror: RegistryMirror}> = props => {
+    const {selectedComponent, setSelectedComponent} = useContext(SelectedComponentContext)!;
+    useChannelListener('componentDisposed', ({id}: ComponentDisposed) => {
+        if (id === selectedComponent()?.id) {
+            setSelectedComponent(undefined);
+        }
+    });
+    useChannelListener('inspectComponentSelected', ({componentId}: InspectComponentSelected) => {
+        const componentData = props.registryMirror.getComponent(componentId)?.componentData;
+        if (componentData) {
+            const componentRowElement = componentRowElements.get(componentId);
+            componentRowElement?.scrollIntoView({block: 'center'});
+            setSelectedComponent(componentData);
+        }
+    });
+
+    return <div class="h-full w-full flex flex-col">
         <div class="w-full flex-none flex flex-row py-1">
-            <div class="py-0.5 mx-3 px-3 border border-blue-400">Placeholder</div>
+            <InspectElementsButton />
         </div>
         <div class="flex-auto w-full overflow-auto text-xs leading-snug">
             <div class="min-w-fit">
@@ -54,6 +78,7 @@ const ComponentTree: Component<{roots: Accessor<RootData[]>}> = props =>
             </div>
         </div>
     </div>
-;
+    ;
+};
 
 export {ComponentTree};

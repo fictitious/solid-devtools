@@ -31,7 +31,7 @@ interface CreateComponent {
 function createComponent({id, name, rawName, props}: CreateComponent): ComponentMirror {
     const [getChildren, setChildren] = createSignal<ComponentData[]>([]);
     const componentData: ComponentData = {id, name, rawName, props, getChildren, setChildren, level: () => undefined};
-    return {id, name, props, componentData, result: [], children: []};
+    return {id, componentData, result: [], children: []};
 }
 
 function updateChildrenData(childrenData: ComponentChildrenData, children: ComponentMirror[]): void {

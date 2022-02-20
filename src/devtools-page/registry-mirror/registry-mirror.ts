@@ -21,6 +21,10 @@ class RegistryMirrorImpl implements RegistryMirror {
         this.domNodeMap = new Map();
     }
 
+    getComponent(id: string): ComponentMirror | undefined {
+        return this.componentMap.get(id);
+    }
+
     componentRendered = (p: ComponentRendered) => {
         if (this.componentMap.has(p.id)) {
             this.logger('error', `RegistryMirror.componentRendered: component is already here. id=${p.id}`);

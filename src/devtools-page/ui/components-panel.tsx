@@ -1,7 +1,6 @@
 import type {Component} from 'solid-js';
-import {createSignal, createEffect, onMount, onCleanup, Show, Switch, Match} from 'solid-js';
+import {createSignal, createEffect, onMount, Show, Switch, Match} from 'solid-js';
 
-import type {ComponentDisposed} from '../../channel/channel-message-types';
 import type {ConnectionState} from '../connection/connection-state-types';
 import type {RootsData} from '../data/component-data-types';
 import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
@@ -120,19 +119,6 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
     });
 
     const [selectedComponent, setSelectedComponent] = createSignal<ComponentData | undefined>();
-    const onComponentDisposed = ({id}: ComponentDisposed) => {
-        if (id === selectedComponent()?.id) {
-            setSelectedComponent(undefined);
-        }
-    };
-    createEffect(() => {
-        const channel = props.connectionState.channel();
-        channel && channel.addListener('componentDisposed', onComponentDisposed);
-    });
-    onCleanup(() => {
-        const channel = props.connectionState.channel();
-        channel && channel.removeListener('componentDisposed', onComponentDisposed);
-    });
 
     return <div ref={outerContainer} classList={{'text-sm': true, 'h-full': true, 'w-full': true, 'flex': true, 'sm:flex-row': true, 'flex-col': true, 'sm:cursor-ew-resize': resizing(), 'cursor-ns-resize': resizing()}}>
         <ConnectionStateSwitch connectionState={props.connectionState}>
@@ -140,7 +126,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
                 <OptionsContext.Provider value={props.options}>
 
                     <div ref={treeContainer} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
-                        <ComponentTree {...{roots: props.rootsData.roots}} />
+                        <ComponentTree {...{roots: props.rootsData.roots, registryMirror: props.registryMirror}} />
                     </div>
 
                     <div class="grow-0 shrink-0 basis-0 relative">

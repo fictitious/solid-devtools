@@ -94,6 +94,10 @@ export interface DomNodeInserted extends RegistryStateMessageBase {
     nextId?: string;
 }
 
+export interface InspectComponentSelected {
+    componentId: string;
+}
+
 export type SnapshotDomNode = Omit<DomNodeRegistered, 'messageSerial'> & NodeExtraData;
 
 export type SnapshotComponent = Omit<ComponentItemBase, 'props'> & {props: SerializedValue};
@@ -106,6 +110,8 @@ const fromDevtools = messages({
     registryStateAck: message<RegistryStateAck>(),
     highlightComponent: message<HighlightComponent>(),
     stopHighlightComponent: message(),
+    startInspectingElements: message(),
+    stopInspectingElements: message(),
     debugBreak: message<DebugBreak>(),
     'test-message': message()
 });
@@ -122,6 +128,8 @@ const fromPage = messages({
     domNodeRootDisposed: message<DomNodeRootDisposed>(),
     domNodeAppended: message<DomNodeAppended>(),
     domNodeInserted: message<DomNodeInserted>(),
+    inspectComponentSelected: message<InspectComponentSelected>(),
+    inspectComponentEnded: message(),
     snapshotDomNode: message<SnapshotDomNode>(),
     snapshotComponent: message<SnapshotComponent>(),
     snapshotDomNodeAppended: message<SnapshotDomNodeAppended>(),
