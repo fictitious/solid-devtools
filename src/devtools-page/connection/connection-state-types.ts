@@ -22,7 +22,7 @@ export interface ConnectionState {
 
     canReconnect(helloAnswer: HelloAnswer): boolean;
     setChannelConnected(hookInstanceId?: string): void; // optional because after reconnect, previousHookInstanceId stays the same
-    createPortIfNotYetCreated(tabId: number, logger: Logger, connectionListener: (m: ChannelMessageFromPage) => void, disconnectListener: () => void): void;
+    initPort(tabId: number, logger: Logger, connectionListener: (m: ChannelMessageFromPage) => void, disconnectListener: () => void): void;
     createTransport(): Transport;
     removeConnectionListener(): void;
     deletePort(): void;

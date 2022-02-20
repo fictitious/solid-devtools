@@ -42,30 +42,36 @@ class ConnectionStateImpl implements ConnectionState {
         return canReconnect(this, helloAnswer);
     }
 
-    createPortIfNotYetCreated(tabId: number, logger: Logger, connectionListener: (m: ChannelMessageFromPage) => void, disconnectListener: () => void) {
+    initPort(tabId: number, logger: Logger, connectionListener: (m: ChannelMessageFromPage) => void, disconnectListener: () => void) {
         if (this.port) {
-            logger('debug', `ConnectionStateImpl: createPortIfNotYetCreated: port already exists`);
-        } else {
-            logger('debug', `ConnectionStateImpl: createPortIfNotYetCreated tabId:${tabId} devtoolsInstanceId:${this.devtoolsInstanceId} previousHookInstanceId:${this.previousHookInstanceId ?? 'none'}`);
-            const {devtoolsInstanceId, previousHookInstanceId} = this;
-            const portName = encodePortName({tabId, devtoolsInstanceId, previousHookInstanceId});
-            this.port = chrome.runtime.connect({name: portName});
-            this.port.onDisconnect.addListener(disconnectListener);
-            this.port.onMessage.addListener(connectionListener);
-            this.setChannelState('connecting');
-            this.removeConnectionListener = () => {
-                this.port?.onMessage.removeListener(connectionListener);
-                this.removeConnectionListener = () => {};
-            };
-            this.deletePort = () => {
-                this.port?.onDisconnect.removeListener(disconnectListener);
-                this.removeConnectionListener();
-                delete this.port;
-                this.setChannelState('disconnected');
-                this.setChannel(undefined);
-                this.deletePort = () => {};
-            };
+            logger('debug', `ConnectionStateImpl: initPort: port already exists. Cleaning up.`);
+            const port = this.port;
+            this.deletePort();
+            try {
+                port.disconnect();
+            } catch {
+                // ignore
+            }
         }
+        logger('debug', `ConnectionStateImpl: initPort tabId:${tabId} devtoolsInstanceId:${this.devtoolsInstanceId} previousHookInstanceId:${this.previousHookInstanceId ?? 'none'}`);
+        const {devtoolsInstanceId, previousHookInstanceId} = this;
+        const portName = encodePortName({tabId, devtoolsInstanceId, previousHookInstanceId});
+        this.port = chrome.runtime.connect({name: portName});
+        this.port.onDisconnect.addListener(disconnectListener);
+        this.port.onMessage.addListener(connectionListener);
+        this.setChannelState('connecting');
+        this.removeConnectionListener = () => {
+            this.port?.onMessage.removeListener(connectionListener);
+            this.removeConnectionListener = () => {};
+        };
+        this.deletePort = () => {
+            this.port?.onDisconnect.removeListener(disconnectListener);
+            this.removeConnectionListener();
+            delete this.port;
+            this.setChannelState('disconnected');
+            this.setChannel(undefined);
+            this.deletePort = () => {};
+        };
     }
 
     createTransport(): Transport {

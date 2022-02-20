@@ -20,7 +20,12 @@ function createPanels(connectionState: ConnectionState, rootsData: RootsData, re
         extensionPanel => {
             extensionPanel.onShown.addListener(panelWindow => {
                 chrome.devtools.inspectedWindow.eval(
-                    `sessionStorage.setItem('${SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY}', 'true')`
+                    `sessionStorage.setItem('${SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY}', 'true')`,
+                    (_, exceptionInfo) => {
+                        if (exceptionInfo) {
+                            debugLog.log('error', `inspectedWindow.eval sessionStorage.setItem failed (components panel onShown): ${exceptionInfo.description}`);
+                        }
+                    }
                 );
                 renderPanelOnce(panelWindow, () => <ComponentsPanel connectionState={connectionState} rootsData={rootsData} registryMirror={registryMirror} options={options}/>);
             });

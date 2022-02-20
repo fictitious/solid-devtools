@@ -22,12 +22,14 @@ function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected:
     if (!connectionStateGlobal) {
         chrome.devtools.inspectedWindow.eval(
             `({solidRegistered: !!window.${devtoolsHookName}?.solidInstance, hookType: window.${devtoolsHookName}?.hookType})`,
-            function({solidRegistered = false, hookType = ''}: {solidRegistered?: boolean; hookType?: string} = {}) {
-                if (solidRegistered && !connectionStateGlobal) {
-                    cleanupOnSolidFirstDetected();
-
-                    void loadOptions()
-                    .then(options => {
+            function({solidRegistered = false, hookType = ''}: {solidRegistered?: boolean; hookType?: string} = {}, exceptionInfo) {
+                if (exceptionInfo) {
+                    console.error(`inspectedWindow.eval failed on creating connection state: ${exceptionInfo.description}`);
+                }
+                void loadOptions()
+                .then(options => {
+                    if (solidRegistered && !connectionStateGlobal) {
+                        cleanupOnSolidFirstDetected();
                         connectionStateGlobal = createConnectionState(hookType === 'full' ? 'full' : 'stub');
                         const rootsData = createRoots();
                         const debugLog = createDebugLog(options);
@@ -40,8 +42,8 @@ function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected:
                             options
                         });
                         createPanels(connectionStateGlobal, rootsData, registryMirror, options, debugLog);
-                    });
-                }
+                    }
+                });
             }
         );
     }
@@ -55,13 +57,21 @@ interface InitConnector {
     options: Options;
 }
 
+let afterDisconnectTimeout: number | undefined;
+
+function clearAfterDisconnectTimeout() {
+    if (afterDisconnectTimeout !== undefined) {
+        clearTimeout(afterDisconnectTimeout);
+        afterDisconnectTimeout = undefined;
+    }
+}
+
 function createConnection(p: InitConnector): void {
 
     initConnector(p);
 
     // reconnect when a new page is loaded.
     chrome.devtools.network.onNavigated.addListener(function onNavigated() {
-
         // background-passthrough will disconnect connection from devtools page (the port created here in initConnector)
         // when the port on the content script side is disconnected (on navigation too)
         // so create a new port here
@@ -71,8 +81,8 @@ function createConnection(p: InitConnector): void {
 }
 
 function initConnector({connectionState, tabId, registryMirror, debugLog, options}: InitConnector): void {
-
-    connectionState.createPortIfNotYetCreated(tabId, debugLog.logger(), connectionListener, disconnectListener);
+    clearAfterDisconnectTimeout();
+    connectionState.initPort(tabId, debugLog.logger(), connectionListener, disconnectListener);
 
     let registryMirrorConnection: RegistryMirrorConnection | undefined;
 
@@ -114,9 +124,10 @@ function initConnector({connectionState, tabId, registryMirror, debugLog, option
         registryMirrorConnection?.unsubscribe();
         connectionState.channel()?.shutdown();
         connectionState.deletePort();
+        clearAfterDisconnectTimeout();
         // chrome will stop background worker after 5 minutes of inactivity, even if there's an open port
         // try to reconnect once if it happens
-        setTimeout(
+        afterDisconnectTimeout = setTimeout(
             () => initConnector({connectionState, tabId, registryMirror, debugLog, options}),
             250
         );
