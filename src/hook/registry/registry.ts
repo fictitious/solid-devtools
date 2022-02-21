@@ -1,6 +1,6 @@
 
 import type {Accessor, Setter, Component} from 'solid-js';
-import type {RegisterSolidInstance as SolidInstance} from 'solid-js/devtools-api';
+import type {RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
 import type {Channel} from '../../channel/channel-types';

@@ -1,6 +1,6 @@
 
 import type {Component} from 'solid-js';
-import type {RegisterSolidInstance as SolidInstance} from 'solid-js/devtools-api';
+import type {RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-types';
 import type {DomNodeAppended, DomNodeInserted, RegistryStateMessageNames, RegistryStateMessageNoSerialMap} from '../../channel/channel-message-types';

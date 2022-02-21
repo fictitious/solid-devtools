@@ -1,6 +1,6 @@
 // based on main.js from React Devtools
 
-import {devtoolsHookName} from 'solid-js/devtools-api';
+import {devtoolsHookName} from 'solid-js';
 
 import type {ChannelMessageFromPage, HelloAnswer} from '../../channel/channel-message-types';
 import {createChannel} from '../../channel/channel';

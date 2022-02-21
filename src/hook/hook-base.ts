@@ -1,6 +1,6 @@
 
-import {devtoolsHookName} from 'solid-js/devtools-api';
-import type {RegisterSolidInstance as SolidInstance, ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js/devtools-api';
+import {devtoolsHookName} from 'solid-js';
+import type {RegisterSolidInstance as SolidInstance, ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js';
 
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';

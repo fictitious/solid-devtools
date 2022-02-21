@@ -1,6 +1,6 @@
 import {nanoid} from 'nanoid';
 import type {Component} from 'solid-js';
-import type {ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js/devtools-api';
+import type {ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js';
 
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import type {Message} from '../channel/channel-transport-types';

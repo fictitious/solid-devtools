@@ -1,6 +1,6 @@
 
 import type {Component} from 'solid-js';
-import type {RegisterSolidInstance as SolidInstance} from 'solid-js/devtools-api';
+import type {RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {ComponentItem} from './node-component-types';
 import type {Registry} from './registry-types';

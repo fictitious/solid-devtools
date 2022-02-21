@@ -1,5 +1,5 @@
 
-import type {RegisterSolidInstance as SolidInstance, HookApi} from 'solid-js/devtools-api';
+import type {RegisterSolidInstance as SolidInstance, HookApi} from 'solid-js';
 
 import type {Hello, HelloAnswer} from '../channel/channel-message-types';
 
