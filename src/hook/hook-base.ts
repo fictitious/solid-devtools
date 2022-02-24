@@ -1,11 +1,13 @@
 
-import {devtoolsHookName} from 'solid-js';
+//import {devtoolsHookName} from 'solid-js';
 import type {RegisterSolidInstance as SolidInstance, ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js';
 
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import {messageFromPage} from '../channel/channel-message-types';
 import type {Hook} from './hook-types';
+
+const devtoolsHookName = '__SOLID_DEVTOOLS_GLOBAL_HOOK__';
 
 // 'stub' hook implementation to inject into the page when solid devtools panel is not open
 class HookBaseImpl implements Hook {

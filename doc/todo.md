@@ -18,6 +18,14 @@
             << static_cast<std::underlying_type_t<blink::ServiceWorkerStatusCode>>(
                     status_code);
 
+- with manifest v3, there's no way to make sure that injected (via script tag) script runs before any script on the page
+    https://bugs.chromium.org/p/chromium/issues/detail?id=634381
+    https://groups.google.com/a/chromium.org/g/chromium-extensions/c/eVZd_vOIryc
+    https://bugs.chromium.org/p/chromium/issues/detail?id=1137396
+    https://bugs.chromium.org/p/chromium/issues/detail?id=1054624
+    
+ ? need to split hook script into parts to make it faster ?
+
 
 - extract changes to solid as patch-package patch
 
