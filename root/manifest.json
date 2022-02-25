@@ -17,7 +17,7 @@
     }],
     "web_accessible_resources": [{
         "resources": [
-            "scripts/hook.js",
+            "scripts/hook-main.js",
             "scripts/hook-stub.js"
         ],
         "matches": ["<all_urls>"]

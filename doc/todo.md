@@ -29,6 +29,4 @@
 
 - extract changes to solid as patch-package patch
 
-- update solid submodules, rebase, ? separate solid-source branch from solid-devtools branch ?
-
 - add benchmark to examples

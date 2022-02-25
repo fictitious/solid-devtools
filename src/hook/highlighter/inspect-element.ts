@@ -4,9 +4,9 @@
 import throttle from 'lodash.throttle';
 import memoizeOne from 'memoize-one';
 
+import type {solidDevtoolsKey as SolidDevtoolsKey} from '../registry/registry-types';
 import type {Channel} from '../../channel/channel-types';
 import type {NodeExtra} from '../registry/registry-types';
-import {solidDevtoolsKey} from '../registry/registry-types';
 import {showOverlay, hideOverlay} from './show-hide-overlay';
 
 interface InspectingSelector {
@@ -15,8 +15,8 @@ interface InspectingSelector {
 
 let selector: InspectingSelector | undefined;
 
-function startInspecting(channel: Channel<'page'>) {
-    selector = new InspectingSelectorImpl(channel);
+function startInspecting(channel: Channel<'page'>, solidDevtoolsKey: typeof SolidDevtoolsKey) {
+    selector = new InspectingSelectorImpl(channel, solidDevtoolsKey);
 }
 
 function stopInspecting() {
@@ -29,7 +29,8 @@ class InspectingSelectorImpl {
     iframesListeningTo: Set<HTMLIFrameElement>;
 
     constructor(
-        public channel: Channel<'page'>
+        public channel: Channel<'page'>,
+        public solidDevtoolsKey: typeof SolidDevtoolsKey
     ) {
         this.iframesListeningTo = new Set();
         this.channel.addShutdownListener(this.stopInspecting);
@@ -133,7 +134,7 @@ class InspectingSelectorImpl {
                 let componentId: string | undefined;
                 let n: (Node & NodeExtra) | null = node;
                 while (n && componentId === undefined) {
-                    const resultOf = n[solidDevtoolsKey]?.resultOf;
+                    const resultOf = n[this.solidDevtoolsKey]?.resultOf;
                     if (resultOf) {
                         componentId = resultOf[0];//resultOf[resultOf.length - 1];
                     }

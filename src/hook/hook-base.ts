@@ -5,6 +5,7 @@ import type {RegisterSolidInstance as SolidInstance, ComponentWrapper, HookInser
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import {messageFromPage} from '../channel/channel-message-types';
+import type {ChunkResult} from './chunk/chunk-types';
 import type {Hook} from './hook-types';
 
 const devtoolsHookName = '__SOLID_DEVTOOLS_GLOBAL_HOOK__';
@@ -13,6 +14,14 @@ const devtoolsHookName = '__SOLID_DEVTOOLS_GLOBAL_HOOK__';
 class HookBaseImpl implements Hook {
 
     solidInstance: SolidInstance | undefined;
+    chunkResult: Promise<ChunkResult>;
+    resovleChunkResult!: (chunkResult: ChunkResult) => void;
+
+    constructor() {
+        this.chunkResult = new Promise<ChunkResult>(resolve => {
+            this.resovleChunkResult = resolve;
+        });
+    }
 
     registerSolidInstance(solidInstance: SolidInstance): void {
         if (this.solidInstance) {
@@ -25,11 +34,11 @@ class HookBaseImpl implements Hook {
         }
     }
 
-    connectChannel(_: Hello): HelloAnswer {
-        return {
+    connectChannel(_: Hello, sendAnswer: (answer: HelloAnswer) => void): void {
+        sendAnswer({
             hookType: 'stub',
             hookInstanceId: ''
-        };
+        });
     }
 
     getComponentWrapper(_updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper {
@@ -57,8 +66,7 @@ function installHook(target: {}, hook: Hook): void {
 
     function onHelloMessage(e: MessageEvent<ChannelMessageFromDevtools>) {
         if (e.source === window && e.data?.category === 'solid-devtools-channel' && e.data?.kind === 'hello') {
-            const helloAnswer = hook.connectChannel(e.data);
-            window.postMessage(messageFromPage('helloAnswer', helloAnswer));
+            hook.connectChannel(e.data, helloAnswer => window.postMessage(messageFromPage('helloAnswer', helloAnswer)));
         }
     }
 }

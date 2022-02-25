@@ -94,6 +94,7 @@ function setupMessagePassthrough(tabId: string, {devtoolsPort, contentScriptPort
 
 function injectContentScriptPassthrough(tabId: number) {
     void chrome.scripting.executeScript({target: {tabId}, files: ['scripts/content-script-passthrough.js']});
+    void chrome.scripting.executeScript({target: {tabId}, files: ['scripts/hook-chunk.js'], world: 'MAIN'} as chrome.scripting.ScriptInjection);
 }
 
 // when disconnect was initiated from the devtools side,

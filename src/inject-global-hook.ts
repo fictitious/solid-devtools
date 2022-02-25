@@ -37,7 +37,7 @@ window.addEventListener('message', ({data, source}: {data?: HookMessage; source:
 // Only do this for HTML documents though, to avoid e.g. breaking syntax highlighting for XML docs.
 if ('text/html' === document.contentType) {
     const panelActivated = sessionStorage.getItem(SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY);
-    injectScript(panelActivated ? '/scripts/hook.js' : '/scripts/hook-stub.js');
+    injectScript(panelActivated ? '/scripts/hook-main.js' : '/scripts/hook-stub.js');
 }
 
 void loadOptions()

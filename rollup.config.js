@@ -18,7 +18,7 @@ const commonOutputSettings = {
 // ? sourcemaps are of no use in chrome extension code due to the following error
 // DevTools failed to load source map: Could not load content for chrome-extension://ohagojhoicbfgahanijppkommknfljje/scripts/the-hook.js.map: HTTP error: status code 404, net::ERR_UNKNOWN_URL_SCHEME
 //        sourcemap: true,
-//        plugins: [rollupPluginTerser()]
+//    plugins: [rollupPluginTerser()]
 };
 
 export default [{
@@ -40,7 +40,14 @@ export default [{
     input: 'src/hook/hook.ts',
     output: {
         ...commonOutputSettings,
-        file: 'dist/unpacked/scripts/hook.js'
+        file: 'dist/unpacked/scripts/hook-main.js'
+    }
+}, {
+    plugins,
+    input: 'src/hook/chunk/chunk.ts',
+    output: {
+        ...commonOutputSettings,
+        file: 'dist/unpacked/scripts/hook-chunk.js'
     }
 }, {
     plugins,

@@ -5,17 +5,16 @@ import type {ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from '
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import type {Message} from '../channel/channel-transport-types';
 import type {Channel} from '../channel/channel-types';
-import {createChannel} from '../channel/channel';
 import {canReconnect} from '../channel/can-reconnect';
 import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, SESSION_STORAGE_DEVTOOLS_EXPOSE_DEBUGGER_HACK} from '../devtools-page/storage-keys';
 import type {Registry} from './registry/registry-types';
+import {solidDevtoolsKey} from './registry/registry-types';
 import {createRegistry} from './registry/registry';
 import {wrapComponent} from './registry/component-wrapper';
 import {createInsertParentWrapper} from './registry/insert-parent-wrapper';
+import type {ChunkResult} from './chunk/chunk-types';
 import type {Hook} from './hook-types';
 import {HookBaseImpl, installHook} from './hook-base';
-import {highlightComponent, stopHighlightComponent} from './highlighter/highlighter';
-import {startInspecting, stopInspecting} from './highlighter/inspect-element';
 
 // this is the script to inject into the page when solid devtools panel is open
 
@@ -42,43 +41,44 @@ class HookImpl extends HookBaseImpl implements Hook {
         this.updateRegisterRoots = [];
     }
 
-    connectChannel(hello: Hello): HelloAnswer {
-        const channel = createChannel('page', {
-            subscribe(fn: (message: Message) => void) {
-                const listener = ({data, source}: MessageEvent<ChannelMessageFromDevtools | undefined>) => {
-                    if (source === window && data?.category === 'solid-devtools-channel' && data.from === 'devtools') {
-                        fn(data);
-                    }
-                };
-                window.addEventListener('message', listener);
-                return () => window.removeEventListener('message', listener);
-            },
-            send(message: Message) {
-                window.postMessage(message);
-            }
-        });
-        const helloAnswer: HelloAnswer = {
-            hookType: 'full',
-            deactivated: this.deactivated,
-            hookInstanceId: this.hookInstanceId,
-            previousDevtoolsInstanceId: this.previousDevtoolsInstanceId
-        };
-        this.previousDevtoolsInstanceId = hello.devtoolsInstanceId;
+    connectChannel(hello: Hello, sendAnswer: (answer: HelloAnswer) => void): void {
+        this.chunkResult.then(({createChannel, highlightComponent, stopHighlightComponent, startInspecting, stopInspecting}) => {
+            const channel = createChannel('page', {
+                subscribe(fn: (message: Message) => void) {
+                    const listener = ({data, source}: MessageEvent<ChannelMessageFromDevtools | undefined>) => {
+                        if (source === window && data?.category === 'solid-devtools-channel' && data.from === 'devtools') {
+                            fn(data);
+                        }
+                    };
+                    window.addEventListener('message', listener);
+                    return () => window.removeEventListener('message', listener);
+                },
+                send(message: Message) {
+                    window.postMessage(message);
+                }
+            });
+            const helloAnswer: HelloAnswer = {
+                hookType: 'full',
+                deactivated: this.deactivated,
+                hookInstanceId: this.hookInstanceId,
+                previousDevtoolsInstanceId: this.previousDevtoolsInstanceId
+            };
+            this.previousDevtoolsInstanceId = hello.devtoolsInstanceId;
 
-        channel.addListener('devtoolsDisconnect', () => {
-            this.registry.disconnect();
-            channel.shutdown();
-        });
+            channel.addListener('devtoolsDisconnect', () => {
+                this.registry.disconnect();
+                channel.shutdown();
+            });
 
-        this.addChannelListeners(channel);
-        // TODO: figure out when to call this.deactivate() - ? in channel.addShutdownListener set 5 min? timer for it, clear timer in connectChannel
+            this.addChannelListeners(channel, {highlightComponent, stopHighlightComponent, startInspecting, stopInspecting});
+            // TODO: figure out when to call this.deactivate() - ? in channel.addShutdownListener set 5 min? timer for it, clear timer in connectChannel
 
-        void Promise.resolve().then(
-            () => this.onChannelReady(hello, helloAnswer, channel) // channel is not ready until after the helloAnswer is sent
-        );
-        // and the HookBaseImpl (stub hook) does not have channel at all but also needs to send helloAnswer
+            sendAnswer(helloAnswer);
 
-        return helloAnswer;
+            this.onChannelReady(hello, helloAnswer, channel); // channel is not ready until after the helloAnswer is sent
+        })
+        .catch(error => console.error(error))
+        ;
     }
 
     onChannelReady(hello: Hello, helloAnswer: HelloAnswer, channel: Channel<'page'>): void {
@@ -89,14 +89,14 @@ class HookImpl extends HookBaseImpl implements Hook {
         }
     }
 
-    addChannelListeners(channel: Channel<'page'>) {
+    addChannelListeners(channel: Channel<'page'>, {highlightComponent, stopHighlightComponent, startInspecting, stopInspecting}: Omit<ChunkResult, 'createChannel'>) {
         channel.addListener('test-message', () => {
             console.log('test-message', this.registry);
         });
         channel.addListener('registryStateAck', ({messageSerial}) => this.registry.messageAck(messageSerial));
         channel.addListener('highlightComponent', ({componentId}) => highlightComponent(componentId, this.registry));
         channel.addListener('stopHighlightComponent', stopHighlightComponent);
-        channel.addListener('startInspectingElements', () => startInspecting(channel));
+        channel.addListener('startInspectingElements', () => startInspecting(channel, solidDevtoolsKey));
         channel.addListener('stopInspectingElements', stopInspecting);
         channel.addListener('debugBreak', ({componentId}) => {
             const componentItem = this.registry.getComponent(componentId);
