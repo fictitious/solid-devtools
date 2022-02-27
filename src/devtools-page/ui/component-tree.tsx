@@ -71,6 +71,7 @@ const ComponentTree: Component<{roots: Accessor<RootData[]>; registryMirror: Reg
     return <div class="h-full w-full flex flex-col">
         <div class="w-full flex-none flex flex-row py-1">
             <InspectElementsButton />
+            <div class="flex-none mx-auto px-8 text-red-700 font-bold">work in progress</div>
         </div>
         <div class="flex-auto w-full overflow-auto text-xs leading-snug">
             <div class="min-w-fit">

@@ -24,9 +24,6 @@
     https://bugs.chromium.org/p/chromium/issues/detail?id=1137396
     https://bugs.chromium.org/p/chromium/issues/detail?id=1054624
     
- ? need to split hook script into parts to make it faster ?
 
+- (maybe?) extract changes to solid as patch-package patch
 
-- extract changes to solid as patch-package patch
-
-- add benchmark to examples
