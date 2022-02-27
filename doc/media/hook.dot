@@ -1,0 +1,32 @@
+
+digraph PageAndHook {
+    compound=true
+
+    subgraph clusterPage {
+
+        label="Page"
+
+        App [shape=oval]
+        ul [label="<ul>
+ App result" shape=diamond style=rounded]
+    }
+
+
+    subgraph clusterHook {
+
+        label [label="Hook script" shape=none]
+
+        Registry [label="Registry
+
+ Map<string, ComponentItem>
+ Map<string, Node>
+" shape=cylinder width=3.5 margin="0.2,0.2"]
+
+
+    }
+
+    App -> ul
+
+    ul -> Registry [label="   hook" dir=both ltail=clusterPage arrowhead=dot arrowtail=lcurvelcurve]
+}
+

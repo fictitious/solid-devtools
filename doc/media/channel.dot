@@ -1,0 +1,58 @@
+
+digraph PageAndHook {
+    compound=true
+
+    subgraph clusterPage {
+
+        label="Page"
+
+        App [shape=oval]
+        ul [label="<ul>
+ App result" shape=diamond style=rounded]
+    }
+
+    subgraph clusterHook {
+
+        label="Hook script"
+
+        Registry [label="Registry
+
+ Map<string, ComponentItem>
+ Map<string, Node>
+" shape=cylinder width=3.5 margin="0.2,0.2"]
+    }
+
+    subgraph clusterDevtoolsTab {
+
+        label="Devtools Tab"
+
+        DevtoolsTab [label="Component Tree" shape=rectangle margin="0.2,0.2"]
+    }
+
+    subgraph clusterDevtoolsData {
+
+        label="Devtools Data"
+
+        RegistryMirror [label="Registry Mirror
+
+    Map<string, ComponentMirror>
+    Map<string, DomNodeMirror>
+" shape=cylinder width=3.5 margin="0.2,0.2"]
+    }
+
+    App -> ul
+
+    ul -> Registry [label="   hook" dir=both ltail=clusterPage arrowhead=dot arrowtail=lcurvelcurve]
+
+    DevtoolsTab -> RegistryMirror [dir=back]
+
+    {rank=same;
+        Registry -> Channel [label="fromPage"]
+        Channel -> Registry [label="fromDevtools"]
+
+        RegistryMirror -> Channel [label="fromDevtools"]
+        Channel -> RegistryMirror [label="fromPage"]
+
+        Channel [shape=box orientation=90 width=3]
+    }
+}

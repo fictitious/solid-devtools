@@ -1,0 +1,47 @@
+digraph ComponentResult {
+
+    node [style=rounded]
+
+    App [shape=oval]
+    ul [label="<ul>
+ App result" shape=diamond]
+    For [shape=oval]
+    Cat1 [label=Cat shape=oval]
+    Cat2 [label=Cat shape=oval]
+    Cat3 [label=Cat shape=oval]
+
+    subgraph clusterForResult {
+
+        label [label="For result" shape=none height=1.5]
+
+
+        li1 [label="<li>
+ Cat result" shape=diamond]
+        li2 [label="<li>
+ Cat result" shape=diamond]
+        li3 [label="<li>
+ Cat result" shape=diamond]
+    }
+
+    a1 [label="<a>" shape=diamond]
+    a2 [label="<a>" shape=diamond]
+    a3 [label="<a>" shape=diamond]
+    text1 [label="text" shape=rectangle]
+    text2 [label="text" shape=rectangle]
+    text3 [label="text" shape=rectangle]
+
+    App -> ul
+    ul -> For
+    For -> Cat1
+    For -> Cat2
+    For -> Cat3
+    Cat1 -> li1
+    Cat2 -> li2
+    Cat3 -> li3
+    li1 -> a1
+    li2 -> a2
+    li3 -> a3
+    a1 -> text1
+    a2 -> text2
+    a3 -> text3
+}
