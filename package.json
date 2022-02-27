@@ -1,6 +1,6 @@
 {
     "name": "solid-devtools-extension",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Solid Developer Tools Chrome Extension",
     "private": true,
     "author": "Artem Khodyush",
