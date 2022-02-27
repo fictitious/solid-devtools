@@ -32,7 +32,8 @@ const ComponentUI: Component<ComponentData> = componentData => {
             classList={{
                 'cursor-default': true,
                 'bg-slate-300': isSelected(),
-                'hover:bg-slate-100': !isSelected()
+                'hover:bg-slate-100': !isSelected(),
+                'dark:hover:bg-slate-200': !isSelected()
             }}
             style={{'padding-left': `${indent}em`}}
         >
