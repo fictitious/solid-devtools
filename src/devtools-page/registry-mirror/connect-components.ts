@@ -180,53 +180,11 @@ interface FindAndConnectToParentComponent {
     nextSiblingIndex: number; // in the parentNode children
 }
 function findAndConnectToParentComponent({roots, componentMap, logger, parentNode, components, prevSiblingIndex, nextSiblingIndex}: FindAndConnectToParentComponent): void {
-    const parentChildren = parentNode.children;
-    let siblingComponents: ComponentMirror[] = [];
-    let i = prevSiblingIndex;
-    while (i >= 0 && siblingComponents.length === 0) {
-        siblingComponents = findConnectedComponentsAtOrBelow(componentMap, logger, parentChildren[i]);
-        --i;
-    }
-    if (siblingComponents.length) { // found prev sibling
-        const prevSiblingComponent = siblingComponents[siblingComponents.length - 1];
-        if (!prevSiblingComponent.componentParent) {
-            logger('error', `findAndConnectToParentComponent: found prev sibling which is unexpectedly not connected: prev sibling id=${prevSiblingComponent.id}`);
-        } else {
-            const {parentChildren: parentComponentChildren, childrenData} = getComponentParentChildren(prevSiblingComponent.componentParent);
-            const prevSiblingComponentIndex = parentComponentChildren.indexOf(prevSiblingComponent);
-            if (prevSiblingComponentIndex < 0) {
-                logger('error', `findAndConnectToParentComponent: found prev sibling which is missing from its parent children: prev sibling id=${prevSiblingComponent.id}`);
-            } else {
-                components.forEach(c => c.componentParent = prevSiblingComponent.componentParent);
-                parentComponentChildren.splice(prevSiblingComponentIndex + 1, 0, ...components);
-                updateChildrenData(childrenData, parentComponentChildren);
-            }
-        }
-    } else {
-        i = nextSiblingIndex;
-        while (i < parentChildren.length && siblingComponents.length === 0) {
-            siblingComponents = findConnectedComponentsAtOrBelow(componentMap, logger, parentChildren[i]);
-            ++i;
-        }
-        if (siblingComponents.length) { // found next sibling
-            const nextSiblingComponent = siblingComponents[0];
-            if (!nextSiblingComponent.componentParent) {
-                logger('error', `findAndConnectToParentComponent: found next sibling which is unexpectedly not connected: next sibling id=${nextSiblingComponent.id}`);
-            } else {
-                const {parentChildren: parentComponentChildren, childrenData} = getComponentParentChildren(nextSiblingComponent.componentParent);
-                const nextSiblingComponentIndex = parentComponentChildren.indexOf(nextSiblingComponent);
-                if (nextSiblingComponentIndex < 0) {
-                    logger('error', `findAndConnectToParentComponent: found next sibling which is missing from its parent children: next sibling id=${nextSiblingComponent.id}`);
-                } else {
-                    components.forEach(c => c.componentParent = nextSiblingComponent.componentParent);
-                    parentComponentChildren.splice(nextSiblingIndex, 0, ...components);
-                    updateChildrenData(childrenData, parentComponentChildren);
-                }
-            }
-        } else {
+    if (!findAndConnectToParentComponentInPrevSiblings({components, nodes: parentNode.children, siblingIndex: prevSiblingIndex, componentMap, logger})) {
+        if (!findAndConnectToParentComponentInNextSiblings({components, nodes: parentNode.children, siblingIndex: nextSiblingIndex, componentMap, logger})) {
             // no components found in siblings - see if parentNode has one, starting from the bottom
             let parentComponent: ComponentMirror | undefined;
-            i = 0;
+            let i = 0;
             while (i < parentNode.resultOf.length && !parentComponent) {
                 const resultOf = componentMap.get(parentNode.resultOf[i]);
                 if (!resultOf) {
@@ -239,15 +197,7 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
                 ++i;
             }
             if (parentComponent) {
-                // there were no components attached to parent node children so, if the parentComponent chilren is not empty,
-                // there's no way to tell where to insert ??
-                if (parentComponent.children.length > 0) {
-                    logger('warn', `findAndConnectToParentComponent: no components found in the connected nodes for the result node, but component has child components: component id ${parentComponent.id}`);
-                }
-                const p = {parentKind: 'component', component: parentComponent} as const;
-                components.forEach(c => c.componentParent = p);
-                parentComponent.children.splice(0, 0, ...components);
-                updateChildrenData(parentComponent.componentData, parentComponent.children);
+                connectToParentComponent({parentComponent, parentNode, components, logger, componentMap});
             } else {
                 if (!parentNode.parent) {
                     const root = roots.find(r => r.domNode === parentNode);
@@ -274,6 +224,149 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
                 }
             }
         }
+    }
+}
+
+interface FindAndConnectToParentComponentInSiblings {
+    components: ComponentMirror[]; // components to find parent for
+    nodes: DomNodeMirror[];       // nodes where to look for parent component
+    siblingIndex: number;        // index in nodes where to start looking
+    componentMap: Map<string, ComponentMirror>;
+    logger: Logger;
+}
+
+interface FindSiblingAndConnectToParentComponent {
+    components: ComponentMirror[];
+    parentComponent: ComponentMirror;
+    nodes: DomNodeMirror[];
+    siblingIndex: number;
+    componentMap: Map<string, ComponentMirror>;
+    logger: Logger;
+}
+
+interface ConnectToSiblingParentComponent {
+    siblingComponents: ComponentMirror[];
+    components: ComponentMirror[];
+    logger: Logger;
+}
+
+function findAndConnectToParentComponentInPrevSiblings({components, nodes,  siblingIndex, componentMap, logger}: FindAndConnectToParentComponentInSiblings): boolean {
+    let siblingComponents: ComponentMirror[] = [];
+    let i = siblingIndex;
+    while (i >= 0 && siblingComponents.length === 0) {
+        siblingComponents = findConnectedComponentsAtOrBelow(componentMap, logger, nodes[i]);
+        --i;
+    }
+    return connectToPrevSiblingParentComponent({siblingComponents, components, logger});
+}
+
+function findPrevSiblingAndConnectToParentComponent({components, parentComponent, nodes, siblingIndex, componentMap, logger}: FindSiblingAndConnectToParentComponent): boolean {
+    let siblingComponents: ComponentMirror[] = [];
+    let i = siblingIndex;
+    while (i >= 0 && siblingComponents.length === 0) {
+        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n))
+        .filter(c => c.componentParent?.parentKind === 'component' && c.componentParent.component.id === parentComponent.id);
+        --i;
+    }
+    return connectToPrevSiblingParentComponent({siblingComponents, components, logger});
+}
+
+function connectToPrevSiblingParentComponent({siblingComponents, components,  logger}: ConnectToSiblingParentComponent): boolean {
+    const found = siblingComponents.length > 0;
+    if (found) {
+        const prevSiblingComponent = siblingComponents[siblingComponents.length - 1];
+        if (!prevSiblingComponent.componentParent) {
+            logger('error', `findAndConnectToParentComponent: found prev sibling which is unexpectedly not connected: prev sibling id=${prevSiblingComponent.id}`);
+        } else {
+            const {parentChildren: parentComponentChildren, childrenData} = getComponentParentChildren(prevSiblingComponent.componentParent);
+            const prevSiblingComponentIndex = parentComponentChildren.indexOf(prevSiblingComponent);
+            if (prevSiblingComponentIndex < 0) {
+                logger('error', `findAndConnectToParentComponent: found prev sibling which is missing from its parent children: prev sibling id=${prevSiblingComponent.id}`);
+            } else {
+                components.forEach(c => c.componentParent = prevSiblingComponent.componentParent);
+                parentComponentChildren.splice(prevSiblingComponentIndex + 1, 0, ...components);
+                updateChildrenData(childrenData, parentComponentChildren);
+            }
+        }
+    }
+    return found; // proper parent was found, so no need to keep searching on error
+}
+
+function findAndConnectToParentComponentInNextSiblings({components, nodes, siblingIndex, componentMap, logger}: FindAndConnectToParentComponentInSiblings): boolean {
+    let siblingComponents: ComponentMirror[] = [];
+    let i = siblingIndex;
+    while (i < nodes.length && siblingComponents.length === 0) {
+        siblingComponents = findConnectedComponentsAtOrBelow(componentMap, logger, nodes[i]);
+        ++i;
+    }
+    return connectToNextSiblingParentComponent({siblingComponents, components, logger});
+}
+
+function findNextSiblingAndConnectToParentComponent({components, parentComponent, nodes, siblingIndex, componentMap, logger}: FindSiblingAndConnectToParentComponent): boolean {
+    let siblingComponents: ComponentMirror[] = [];
+    let i = siblingIndex;
+    while (i < nodes.length && siblingComponents.length === 0) {
+        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n))
+        .filter(c => c.componentParent?.parentKind === 'component' && c.componentParent.component.id === parentComponent.id);
+        ++i;
+    }
+    return connectToNextSiblingParentComponent({siblingComponents, components, logger});
+}
+
+function connectToNextSiblingParentComponent({siblingComponents, components, logger}: ConnectToSiblingParentComponent): boolean {
+    const found = siblingComponents.length > 0;
+    if (found) {
+        const nextSiblingComponent = siblingComponents[0];
+        if (!nextSiblingComponent.componentParent) {
+            logger('error', `findAndConnectToParentComponent: found next sibling which is unexpectedly not connected: next sibling id=${nextSiblingComponent.id}`);
+        } else {
+            const {parentChildren: parentComponentChildren, childrenData} = getComponentParentChildren(nextSiblingComponent.componentParent);
+            const nextSiblingComponentIndex = parentComponentChildren.indexOf(nextSiblingComponent);
+            if (nextSiblingComponentIndex < 0) {
+                logger('error', `findAndConnectToParentComponent: found next sibling which is missing from its parent children: next sibling id=${nextSiblingComponent.id}`);
+            } else {
+                components.forEach(c => c.componentParent = nextSiblingComponent.componentParent);
+                parentComponentChildren.splice(nextSiblingComponentIndex, 0, ...components);
+                updateChildrenData(childrenData, parentComponentChildren);
+            }
+        }
+    }
+    return found; // proper parent was found, so no need to keep searching on error
+}
+
+interface ConnectToParentComponent {
+    parentComponent: ComponentMirror;
+    parentNode: DomNodeMirror;
+    components: ComponentMirror[];
+    logger: Logger;
+    componentMap: Map<string, ComponentMirror>;
+}
+function connectToParentComponent({parentComponent, parentNode, components, logger, componentMap}: ConnectToParentComponent): void {
+    let connected = false;
+    if (parentComponent.children.length > 0) {
+        // need to find a place where to insert component
+        if (parentNode.parent) {
+            const parentChildren = parentNode.parent.children;
+            const siblingIndex = parentChildren.indexOf(parentNode);
+            if (siblingIndex < 0) {
+                logger('error', `connectToParentComponent: parentNode is not found in its parent children. parentNode id=${parentNode.id}`);
+            } else {
+                connected = findPrevSiblingAndConnectToParentComponent({components, parentComponent, nodes: parentChildren, siblingIndex: siblingIndex - 1, componentMap, logger})
+                    || findNextSiblingAndConnectToParentComponent({components, parentComponent, nodes: parentChildren, siblingIndex: siblingIndex + 1, componentMap, logger})
+                ;
+            }
+        }
+    }
+    if (!connected) {
+        if (parentComponent.children.length > 0) {
+            // there were no components attached to parent node children or siblings so, if the parentComponent chilren is not empty,
+            // there's no way to tell where to insert the component
+            logger('warn', `connectToParentComponent: no components found in the connected nodes for the result node, but component has child components: component id ${parentComponent.id}`);
+        }
+        const p = {parentKind: 'component', component: parentComponent} as const;
+        components.forEach(c => c.componentParent = p);
+        parentComponent.children.splice(0, 0, ...components);
+        updateChildrenData(parentComponent.componentData, parentComponent.children);
     }
 }
 
