@@ -264,8 +264,7 @@ function findPrevSiblingAndConnectToParentComponent({components, parentComponent
     let siblingComponents: ComponentMirror[] = [];
     let i = siblingIndex;
     while (i >= 0 && siblingComponents.length === 0) {
-        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n))
-        .filter(c => c.componentParent?.parentKind === 'component' && c.componentParent.component.id === parentComponent.id);
+        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n)).filter(c => isComponentParent({c, parentComponent}));
         --i;
     }
     return connectToPrevSiblingParentComponent({siblingComponents, components, logger});
@@ -306,8 +305,7 @@ function findNextSiblingAndConnectToParentComponent({components, parentComponent
     let siblingComponents: ComponentMirror[] = [];
     let i = siblingIndex;
     while (i < nodes.length && siblingComponents.length === 0) {
-        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n))
-        .filter(c => c.componentParent?.parentKind === 'component' && c.componentParent.component.id === parentComponent.id);
+        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n)).filter(c => isComponentParent({c, parentComponent}))
         ++i;
     }
     return connectToNextSiblingParentComponent({siblingComponents, components, logger});
@@ -368,6 +366,10 @@ function connectToParentComponent({parentComponent, parentNode, components, logg
         parentComponent.children.splice(0, 0, ...components);
         updateChildrenData(parentComponent.componentData, parentComponent.children);
     }
+}
+
+function isComponentParent({c, parentComponent}: {c: ComponentMirror, parentComponent: ComponentMirror}): boolean {
+    return c.componentParent?.parentKind === 'component' && c.componentParent.component === parentComponent;
 }
 
 function sameComponentParent(c1: ComponentMirror, c2: ComponentMirror) {
