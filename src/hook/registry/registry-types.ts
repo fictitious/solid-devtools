@@ -1,6 +1,5 @@
 
-import type {Component} from 'solid-js';
-import type {RegisterSolidInstance as SolidInstance} from 'solid-js';
+import type {Component, Setter, RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-types';
 import type {DomNodeAppended, DomNodeInserted, RegistryStateMessageNames, RegistryStateMessageNoSerialMap} from '../../channel/channel-message-types';
@@ -22,10 +21,13 @@ export interface Registry extends RegistryConnection {
     registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component>;
     registerDomNode(node: Node & NodeExtra): Node & Required<Node & NodeExtra>;
     nodeRemoved(node: Node & NodeExtra): void;
-    registerRoot(node: Node & NodeExtra): void;
-    unregisterRoot(node: Node & NodeExtra): void;
+    registerDOMRoot(node: Node & NodeExtra): void;
+    unregisterDOMRoot(node: Node & NodeExtra): void;
     domNodeAppended(p: Omit<DomNodeAppended, 'messageSerial'>): void;
     domNodeInserted(p: Omit<DomNodeInserted, 'messageSerial'>): void;
+    registerSignal(ownerId: string, setter: Setter<unknown>, name: string | undefined, value: unknown): string;
+    updateSignal(signalId: string, value: unknown): void;
+    unregisterSignal(signalId: string): void;
 
     getComponent(id: string): ComponentItem | undefined;
     getDomNode(id: string): Node & NodeExtra | undefined;

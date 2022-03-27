@@ -1,6 +1,5 @@
 import {nanoid} from 'nanoid';
-import type {Component} from 'solid-js';
-import type {ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js';
+import type {Component, ComponentWrapper, HookInsertParentWrapper, HookRegisterDOMRoot, HookRegisterComputation, HookWrapSignal} from 'solid-js';
 
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
 import type {Message} from '../channel/channel-transport-types';
@@ -10,8 +9,9 @@ import {SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, SESSION_STORAGE_DEVTOOLS_E
 import type {Registry} from './registry/registry-types';
 import {solidDevtoolsKey} from './registry/registry-types';
 import {createRegistry} from './registry/registry';
-import {wrapComponent} from './registry/component-wrapper';
-import {createInsertParentWrapper} from './registry/insert-parent-wrapper';
+import {wrapComponent} from './wrappers/component-wrapper';
+import {createInsertParentWrapper} from './wrappers/insert-parent-wrapper';
+import {registerComputation, wrapSignal} from './wrappers/signal-wrappers';
 import type {ChunkResult} from './chunk/chunk-types';
 import type {Hook} from './hook-types';
 import {HookBaseImpl, installHook} from './hook-base';
@@ -27,7 +27,9 @@ class HookImpl extends HookBaseImpl implements Hook {
 
     updateComponentWrappers: ((newWrapper: ComponentWrapper) => void)[];
     updateInsertParentWrappers: ((newWrapper: HookInsertParentWrapper) => void)[];
-    updateRegisterRoots: ((newRegisterRoot: HookRegisterRoot) => void)[];
+    updateRegisterDOMRoots: ((newRegisterDOMRoot: HookRegisterDOMRoot) => void)[];
+    updateRegisterComputations: ((newRegister: HookRegisterComputation) => void)[];
+    updateWrapSignals: ((newWrap: HookWrapSignal) => void)[];
 
     constructor() {
         super();
@@ -38,7 +40,9 @@ class HookImpl extends HookBaseImpl implements Hook {
 
         this.updateComponentWrappers = [];
         this.updateInsertParentWrappers = [];
-        this.updateRegisterRoots = [];
+        this.updateRegisterDOMRoots = [];
+        this.updateRegisterComputations = [];
+        this.updateWrapSignals = [];
     }
 
     connectChannel(hello: Hello, sendAnswer: (answer: HelloAnswer) => void): void {
@@ -94,6 +98,7 @@ class HookImpl extends HookBaseImpl implements Hook {
             console.log('test-message', this.registry);
         });
         channel.addListener('registryStateAck', ({messageSerial}) => this.registry.messageAck(messageSerial));
+        channel.addListener('setComponentWatchingSignals', m => this.setComponentWatchingSignals(m));
         channel.addListener('highlightComponent', ({componentId}) => highlightComponent(componentId, this.registry));
         channel.addListener('stopHighlightComponent', stopHighlightComponent);
         channel.addListener('startInspectingElements', () => startInspecting(channel, solidDevtoolsKey));
@@ -105,6 +110,15 @@ class HookImpl extends HookBaseImpl implements Hook {
                 setTimeout(() => componentItem.setDebugBreak?.(false), 100);
             }
         });
+    }
+
+    setComponentWatchingSignals({componentId, watching}: {componentId: string; watching: boolean}) {
+        const component = this.registry.getComponent(componentId);
+        component?.setWatchingSignals(watching);
+    }
+
+    isActive() {
+        return !this.deactivated;
     }
 
     getComponentWrapper(updateWrapper: (newWrapper: ComponentWrapper) => void): ComponentWrapper {
@@ -125,15 +139,33 @@ class HookImpl extends HookBaseImpl implements Hook {
         }
     }
 
-    getRegisterRoot(updateRegisterRoot: (newRegisterRoot: HookRegisterRoot) => void): HookRegisterRoot {
+    getRegisterDOMRoot(updateRegisterDOMRoot: (newRegisterDOMRoot: HookRegisterDOMRoot) => void): HookRegisterDOMRoot {
         if (!this.deactivated) {
-            this.updateRegisterRoots.push(updateRegisterRoot);
+            this.updateRegisterDOMRoots.push(updateRegisterDOMRoot);
             return node => {
-                this.registry.registerRoot(node);
-                return () => this.registry.unregisterRoot(node);
+                this.registry.registerDOMRoot(node);
+                return () => this.registry.unregisterDOMRoot(node);
             };
         } else {
             return () => () => {};
+        }
+    }
+
+    getRegisterComputation(updateRegister: (newRegister: HookRegisterComputation) => void): HookRegisterComputation {
+        if (!this.deactivated) {
+            this.updateRegisterComputations.push(updateRegister);
+            return c => registerComputation(c);
+        } else {
+            return () => {};
+        }
+    }
+
+    getWrapSignal(updateWrap: (newWrap: HookWrapSignal) => void): HookWrapSignal {
+        if (!this.deactivated) {
+            this.updateWrapSignals.push(updateWrap);
+            return (setter, signalState, name) => wrapSignal({setter, signalState, name, solidInstance: this.solidInstance, registry: this.registry});
+        } else {
+            return setter => setter;
         }
     }
 
@@ -145,8 +177,14 @@ class HookImpl extends HookBaseImpl implements Hook {
         for (const u of this.updateInsertParentWrappers) {
             u(parent => parent);
         }
-        for (const u of this.updateRegisterRoots) {
+        for (const u of this.updateRegisterDOMRoots) {
             u(() => () => {});
+        }
+        for (const u of this.updateRegisterComputations) {
+            u(() => {});
+        }
+        for (const u of this.updateWrapSignals) {
+            u(setter => setter);
         }
     }
 }

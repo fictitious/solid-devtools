@@ -19,6 +19,16 @@ export interface ComponentItemBase {
 }
 export interface ComponentItem extends ComponentItemBase {
     comp: Component;
+    watchingSignals: Accessor<boolean>;
+    setWatchingSignals: Setter<boolean>;
     debugBreak?: Accessor<boolean>;
     setDebugBreak?: Setter<boolean>;
+}
+
+export interface SignalItem {
+    id: string;
+    ownerId: string;
+    setter: Setter<unknown>;
+    name?: string;
+    value: unknown;
 }

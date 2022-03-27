@@ -23,6 +23,16 @@ export interface ComponentData extends ComponentChildrenData {
     name: string;
     rawName: string;
     props: SerializedValue;
+    getSignals: Accessor<SignalData[]>;
+    setSignals: Setter<SignalData[]>;
+    watchingSignals: Accessor<boolean>;
+    setWatchingSignals: Setter<boolean>;
+}
+
+export interface SignalData {
+    id: string;
+    name?: string;
+    value: SerializedValue;
 }
 
 export interface RootsData {

@@ -1,8 +1,10 @@
 
-import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
+import type {
+    ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended, SignalCreated, SignalUpdated, SignalDisposed
+} from '../../channel/channel-message-types';
 import type {Logger} from '../data/logger-types';
 import type {RootsData} from '../data/component-data-types';
-import {createRoot, createComponent} from '../data/component-data';
+import {createRoot, createComponent, addSignal, updateSignal, removeSignal} from '../data/component-data';
 import type {ComponentMirror, ComponentResultMirror, DomNodeMirror, RegistryRoot, RegistryMirror} from './registry-mirror-types';
 import {connectDomTree, disconnectDomTree, connectedResultAdded, findAndConnectToParentComponent, removeComponentFromTree, removeDomNodeFromComponentResult} from './connect-components';
 
@@ -197,6 +199,27 @@ class RegistryMirrorImpl implements RegistryMirror {
                     }
                 }
             }
+        }
+    };
+
+    signalCreated = ({signalId, ownerId, name, value}: SignalCreated) => {
+        const componentMirror = this.componentMap.get(ownerId);
+        if (componentMirror) {
+            addSignal({setSignals: componentMirror.componentData.setSignals, signalId, name, value});
+        }
+    };
+
+    signalUpdated = ({signalId, ownerId, value}: SignalUpdated) => {
+        const componentMirror = this.componentMap.get(ownerId);
+        if (componentMirror) {
+            updateSignal(componentMirror.componentData.setSignals, signalId, value);
+        }
+    };
+
+    signalDisposed = ({signalId, ownerId}: SignalDisposed) => {
+        const componentMirror = this.componentMap.get(ownerId);
+        if (componentMirror) {
+            removeSignal(componentMirror.componentData.setSignals, signalId);
         }
     };
 

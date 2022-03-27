@@ -5,7 +5,8 @@ import {Show, useContext} from 'solid-js';
 import {ChannelContext} from './contexts/channel-context';
 import {OptionsContext} from './contexts/options-context';
 import {SelectedComponentContext} from './contexts/selected-component-context';
-import {ValueList} from './value-list';
+import {PropsList, SignalList} from './value-list';
+import {WatchSignalsButton} from './watch-signals-button';
 import {buttonClass} from './common-styles';
 
 const toolbarButtonClass = `${buttonClass} mx-3 flex-none`;
@@ -25,9 +26,11 @@ const ComponentDetails: Component = () => {
             </>}</Show>
         </div>
         <div class="flex-auto w-full overflow-auto text-xs leading-snug">
-            <Show when={selectedComponent()}>
-                {component => <ValueList values={component.props} />}
-            </Show>
+            <Show when={selectedComponent()}>{component => <>
+                <PropsList values={component.props} />
+                <WatchSignalsButton component={component} />
+                <SignalList signals={component.getSignals()} />
+            </>}</Show>
         </div>
     </div>
     ;
