@@ -9,7 +9,6 @@ import {loadOptions} from '../../options/options';
 import type {RegistryMirror, RegistryMirrorConnection} from '../registry-mirror/registry-mirror-types';
 import {createRegistryMirror} from '../registry-mirror/registry-mirror';
 import {createRegistryMirrorConnection} from '../registry-mirror/registry-mirror-connection';
-import {createRoots} from '../data/component-data';
 import type {DebugLog} from '../data/logger-types';
 import {createDebugLog} from '../data/logger';
 import type {ConnectionState} from './connection-state-types';
@@ -32,9 +31,8 @@ function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected:
                     if (solidRegistered && !connectionStateGlobal) {
                         cleanupOnSolidFirstDetected();
                         connectionStateGlobal = createConnectionState(hookType === 'full' ? 'full' : 'stub');
-                        const rootsData = createRoots();
                         const debugLog = createDebugLog(options);
-                        const registryMirror = createRegistryMirror(rootsData, debugLog.logger());
+                        const registryMirror = createRegistryMirror(debugLog.logger());
                         createConnection({
                             connectionState: connectionStateGlobal,
                             tabId: chrome.devtools.inspectedWindow.tabId,
@@ -42,7 +40,7 @@ function createConnectionAndPanelsIfSolidRegistered(cleanupOnSolidFirstDetected:
                             debugLog,
                             options
                         });
-                        createPanels(connectionStateGlobal, rootsData, registryMirror, options, debugLog);
+                        createPanels(connectionStateGlobal, registryMirror, options, debugLog);
                     }
                 });
             }

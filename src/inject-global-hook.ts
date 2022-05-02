@@ -8,7 +8,7 @@
 import nullthrows from 'nullthrows';
 
 import type {HookMessage} from './hook/hook-message-types';
-import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY, SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, SESSION_STORAGE_DEVTOOLS_EXPOSE_DEBUGGER_HACK} from './devtools-page/storage-keys';
+import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY, SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY} from './devtools-page/storage-keys';
 import {loadOptions} from './options/options';
 
 function injectScript(path: string) {
@@ -43,5 +43,4 @@ if ('text/html' === document.contentType) {
 void loadOptions()
 .then(options => {
     sessionStorage.setItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_NODE_IDS_KEY, options.exposeIds ? 'true' : '');
-    sessionStorage.setItem(SESSION_STORAGE_DEVTOOLS_EXPOSE_DEBUGGER_HACK, options.exposeDebuggerHack ? 'true' : '');
 });

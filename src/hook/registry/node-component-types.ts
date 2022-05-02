@@ -1,5 +1,5 @@
 
-import type {Component, Accessor, Setter} from 'solid-js';
+import type {Component, Setter} from 'solid-js';
 
 export interface NodeExtraData {
     id: string;
@@ -19,6 +19,14 @@ export interface ComponentItemBase {
 }
 export interface ComponentItem extends ComponentItemBase {
     comp: Component;
-    debugBreak?: Accessor<boolean>;
-    setDebugBreak?: Setter<boolean>;
+}
+
+export interface SignalItem {
+    id: string;
+    ownerId?: string;
+    componentId?: string;
+    setter: Setter<unknown>;
+    name?: string;
+    value: unknown;
+    stack?: string;
 }

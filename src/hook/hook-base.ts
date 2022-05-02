@@ -1,6 +1,6 @@
 
 //import {devtoolsHookName} from 'solid-js';
-import type {RegisterSolidInstance as SolidInstance, ComponentWrapper, HookInsertParentWrapper, HookRegisterRoot} from 'solid-js';
+import type {RegisterSolidInstance as SolidInstance, ComponentWrapper, HookInsertParentWrapper, HookRegisterDOMRoot, HookRegisterComputation, HookWrapSignal} from 'solid-js';
 
 import type {HookMessageSolidRegistered} from './hook-message-types';
 import type {ChannelMessageFromDevtools, Hello, HelloAnswer} from '../channel/channel-message-types';
@@ -21,6 +21,10 @@ class HookBaseImpl implements Hook {
         this.chunkResult = new Promise<ChunkResult>(resolve => {
             this.resovleChunkResult = resolve;
         });
+    }
+
+    isActive() {
+        return false;
     }
 
     registerSolidInstance(solidInstance: SolidInstance): void {
@@ -49,8 +53,16 @@ class HookBaseImpl implements Hook {
         return p => p;
     }
 
-    getRegisterRoot(_updateRegisterRoot: (newRegisterRoot: HookRegisterRoot) => void): HookRegisterRoot {
+    getRegisterDOMRoot(_updateRegisterDOMRoot: (newRegisterDOMRoot: HookRegisterDOMRoot) => void): HookRegisterDOMRoot {
         return () => () => {};
+    }
+
+    getRegisterComputation(_updateRegister: (newRegister: HookRegisterComputation) => void): HookRegisterComputation {
+        return () => {};
+    }
+
+    getWrapSignal(_updateWrap: (newWrap: HookWrapSignal) => void): HookWrapSignal {
+        return setter => setter;
     }
 }
 

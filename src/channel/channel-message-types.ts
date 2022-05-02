@@ -29,8 +29,8 @@ export interface HighlightComponent {
     componentId: string;
 }
 
-export interface DebugBreak {
-    componentId: string;
+export interface ConsoleLogSignalStack {
+    signalId: string;
 }
 
 // page -> devtools
@@ -94,6 +94,27 @@ export interface DomNodeInserted extends RegistryStateMessageBase {
     nextId?: string;
 }
 
+export interface SignalCreated extends RegistryStateMessageBase {
+    signalId: string;
+    ownerId?: string;
+    componentId?: string;
+    name?: string;
+    value: SerializedValue;
+}
+
+export interface SignalUpdated extends RegistryStateMessageBase {
+    signalId: string;
+    ownerId?: string;
+    componentId?: string;
+    value: SerializedValue;
+}
+
+export interface SignalDisposed extends RegistryStateMessageBase {
+    signalId: string;
+    ownerId?: string;
+    componentId?: string;
+}
+
 export interface InspectComponentSelected {
     componentId: string;
 }
@@ -104,6 +125,8 @@ export type SnapshotComponent = Omit<ComponentItemBase, 'props'> & {props: Seria
 
 export type SnapshotDomNodeAppended = Omit<DomNodeAppended, 'messageSerial'>;
 
+export type SnapshotSignal = Omit<SignalCreated, 'messageSerial'>;
+
 const fromDevtools = messages({
     hello: message<Hello>(),
     devtoolsDisconnect: message(),
@@ -112,8 +135,8 @@ const fromDevtools = messages({
     stopHighlightComponent: message(),
     startInspectingElements: message(),
     stopInspectingElements: message(),
-    debugBreak: message<DebugBreak>(),
-    'test-message': message()
+    consoleLogRegistry: message(),
+    consoleLogSignalStack: message<ConsoleLogSignalStack>()
 });
 export type FromDevtools = typeof fromDevtools;
 
@@ -128,11 +151,15 @@ const fromPage = messages({
     domNodeRootDisposed: message<DomNodeRootDisposed>(),
     domNodeAppended: message<DomNodeAppended>(),
     domNodeInserted: message<DomNodeInserted>(),
+    signalCreated: message<SignalCreated>(),
+    signalUpdated: message<SignalUpdated>(),
+    signalDisposed: message<SignalDisposed>(),
     inspectComponentSelected: message<InspectComponentSelected>(),
     inspectComponentEnded: message(),
     snapshotDomNode: message<SnapshotDomNode>(),
     snapshotComponent: message<SnapshotComponent>(),
     snapshotDomNodeAppended: message<SnapshotDomNodeAppended>(),
+    snapshotSignal: message<SnapshotSignal>(),
     snapshotCompleted: message()
 });
 export type FromPage = typeof fromPage;
@@ -154,7 +181,9 @@ function messageFromPage<K extends keyof FromPage>(kind: K, content: FromPage[K]
 }
 
 const registryStateMessageNames = [
-    'componentRendered', 'componentDisposed', 'domNodeRegistered', 'domNodeRemoved', 'domNodeAddedResultOf', 'domNodeIsRoot', 'domNodeRootDisposed', 'domNodeAppended', 'domNodeInserted'
+    'componentRendered', 'componentDisposed',
+    'domNodeRegistered', 'domNodeRemoved', 'domNodeAddedResultOf', 'domNodeIsRoot', 'domNodeRootDisposed', 'domNodeAppended', 'domNodeInserted',
+    'signalCreated', 'signalUpdated', 'signalDisposed'
 ] as const;
 
 export type RegistryStateMessageNames = typeof registryStateMessageNames[number];
@@ -168,7 +197,7 @@ export type RegistryStateMessageWithKind = RegistryStateMessageWithKindMap[keyof
 export type RegistryStateMessageNoSerialMap = {[K in RegistryStateMessageNames]: Omit<FromPage[K][0], 'messageSerial'>};
 export type RegistryStateMessageNoSerial = RegistryStateMessageNoSerialMap[keyof RegistryStateMessageNoSerialMap];
 
-const registrySnapshotMessageNames = ['snapshotDomNode', 'snapshotComponent', 'snapshotDomNodeAppended', 'snapshotCompleted'] as const;
+const registrySnapshotMessageNames = ['snapshotDomNode', 'snapshotComponent', 'snapshotDomNodeAppended', 'snapshotSignal', 'snapshotCompleted'] as const;
 
 export type RegistrySnapshotMessageNames = typeof registrySnapshotMessageNames[number];
 

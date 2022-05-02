@@ -1,6 +1,12 @@
 
-import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
-import type {RootData, ComponentData} from '../data/component-data-types';
+
+import type {Accessor} from 'solid-js';
+
+import type {
+    ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended, SignalCreated, SignalUpdated, SignalDisposed
+} from '../../channel/channel-message-types';
+import type {DomRootData, ComponentData} from '../data/component-data-types';
+import type {SignalData} from '../data/signal-data-types';
 
 export type ComponentResultMirror = DomNodeMirror | ComponentResultMirror[] | undefined;
 
@@ -20,14 +26,14 @@ export interface ComponentParentComponent {
 }
 
 export interface ComponentParentRoot {
-    parentKind: 'root';
-    root: RegistryRoot;
+    parentKind: 'domroot';
+    domRoot: RegistryDomRoot;
 }
 
-export interface RegistryRoot {
+export interface RegistryDomRoot {
     domNode: DomNodeMirror;
     components: ComponentMirror[];
-    rootData: RootData;
+    domRootData: DomRootData;
 }
 
 export interface DomNodeMirror {
@@ -52,8 +58,13 @@ export interface RegistryMirror {
     domNodeAddedResultOf(p: Omit<DomNodeAddedResultOf, 'messageSerial'>): void;
     domNodeAppended(p: Omit<DomNodeAppended, 'messageSerial'>): void;
     domNodeInserted(p: Omit<DomNodeInserted, 'messageSerial'>): void;
+    signalCreated(p: Omit<SignalCreated, 'messageSerial'>): void;
+    signalUpdated(p: Omit<SignalUpdated, 'mesageSerial'>): void;
+    signalDisposed(p: Omit<SignalDisposed, 'messageSerial'>): void;
 
     getComponent(id: string): ComponentMirror | undefined;
+    domRootsData: Accessor<DomRootData[]>;
+    globalSignals: Accessor<SignalData[]>;
     clear(): void;
 }
 

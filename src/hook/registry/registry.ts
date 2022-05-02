@@ -1,21 +1,23 @@
 
-import type {Accessor, Setter, Component} from 'solid-js';
-import type {RegisterSolidInstance as SolidInstance} from 'solid-js';
+import type {Component, Computation, ComputationType, RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
 import type {Channel} from '../../channel/channel-types';
 import {serializeValue} from '../../channel/serialized-value';
 import {findRegisteredDescendantsOrSelf} from './node-functions';
 import {removeHotPrefix} from './component-functions';
-import type {ComponentItem, ComponentProps} from './node-component-types';
-import type {Registry, NodeExtra, RegistryOptions} from './registry-types';
+import type {ComponentItem, ComponentProps, SignalItem} from './node-component-types';
+import type {Registry, RegisterSignal, NodeExtra, RegistryOptions} from './registry-types';
 import {solidDevtoolsKey} from './registry-types';
 import {RegistryConnectionImpl} from './registry-connection';
+import {getOwnerDevtoolsData} from './reactive-functions';
 
 class RegistryImpl extends RegistryConnectionImpl implements Registry {
 
     componentMap: Map<string, ComponentItem>;
     domNodeMap: Map<string, Node & NodeExtra>;
+    computationMap: Map<string, Computation<unknown>>;
+    signalMap: Map<string, SignalItem>;
 
     constructor(
         public options: RegistryOptions
@@ -23,16 +25,13 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
         super();
         this.componentMap = new Map();
         this.domNodeMap = new Map();
+        this.computationMap = new Map();
+        this.signalMap = new Map();
     }
 
-    registerComponent(solidInstance: SolidInstance, comp: Component, props?: ComponentProps): ComponentItem {
+    registerComponent(comp: Component, props?: ComponentProps): ComponentItem {
         const id = newComponentId();
-        let debugBreak: Accessor<boolean> | undefined;
-        let setDebugBreak: Setter<boolean> | undefined;
-        if (this.options.exposeDebuggerHack) {
-            [debugBreak, setDebugBreak] = solidInstance.createSignal(false);
-        }
-        const componentItem: ComponentItem = {id, comp, name: removeHotPrefix(comp.name), rawName: comp.name, props, result: [], debugBreak, setDebugBreak};
+        const componentItem: ComponentItem = {id, comp: comp, name: removeHotPrefix(comp.name), rawName: comp.name, props, result: []};
         this.componentMap.set(id, componentItem);
         this.sendRegistryMessage('componentRendered', {id, name: componentItem.name, rawName: componentItem.rawName, props: serializeValue(props)});
         return componentItem;
@@ -49,6 +48,10 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
 
     getDomNode(id: string): Node & NodeExtra | undefined {
         return this.domNodeMap.get(id);
+    }
+
+    getSignal(id: string): SignalItem | undefined {
+        return this.signalMap.get(id);
     }
 
     registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component> {
@@ -102,13 +105,13 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
         this.unregisterDomTree(node);
     }
 
-    registerRoot(node: Node & NodeExtra): void {
+    registerDOMRoot(node: Node & NodeExtra): void {
         const nodeExtra = this.registerDomNode(node)[solidDevtoolsKey];
         nodeExtra.isRoot = true;
         this.sendRegistryMessage('domNodeIsRoot', {id: nodeExtra.id});
     }
 
-    unregisterRoot(node: Node & NodeExtra): void {
+    unregisterDOMRoot(node: Node & NodeExtra): void {
         const nodeExtra = node[solidDevtoolsKey];
         if (nodeExtra) {
             delete nodeExtra.isRoot;
@@ -125,6 +128,54 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
 
     domNodeInserted({parentId, childIds, prevId, nextId}: Omit<DomNodeInserted, 'messageSerial'>): void {
         this.sendRegistryMessage('domNodeInserted', {parentId, childIds, prevId, nextId});
+    }
+
+    registerComputation(solidInstance: SolidInstance, c: Computation<unknown>, type: ComputationType, componentId?: string): void {
+        const id = newComputationId();
+        c.devtoolsData = {type, id, componentId};
+        if (!componentId) {
+            const ownerData = getOwnerDevtoolsData(c.owner);
+            if (ownerData) {
+                c.devtoolsData.componentId = ownerData.componentId;
+            }
+        }
+        this.computationMap.set(id, c);
+        solidInstance.onCleanup(() => this.unregisterComputation(id));
+    }
+
+    unregisterComputation(id: string): void {
+        const computationItem = this.computationMap.get(id);
+        if (computationItem) {
+            this.computationMap.delete(id);
+            if (computationItem.devtoolsData?.ownedSignalIds) {
+                for (const signalId of computationItem.devtoolsData.ownedSignalIds) {
+                    this.unregisterSignal(signalId);
+                }
+            }
+        }
+    }
+
+    registerSignal({ownerId, componentId, setter, name, value, stack}: RegisterSignal): string {
+        const signalItem: SignalItem = {id: newSignalId(), ownerId, componentId, setter, name, value, stack};
+        this.signalMap.set(signalItem.id, signalItem);
+        this.sendRegistryMessage('signalCreated', {signalId: signalItem.id, ownerId, componentId, name, value: serializeValue(value)});
+        return signalItem.id;
+    }
+
+    updateSignal(signalId: string, value: unknown): void {
+        const signalItem = this.signalMap.get(signalId);
+        if (signalItem) {
+            signalItem.value = value;
+            this.sendRegistryMessage('signalUpdated', {signalId: signalItem.id, ownerId: signalItem.ownerId, componentId: signalItem.componentId, value: serializeValue(value)});
+        }
+    }
+
+    unregisterSignal(signalId: string): void {
+        const signalItem = this.signalMap.get(signalId);
+        if (signalItem) {
+            this.sendRegistryMessage('signalDisposed', {signalId: signalItem.id, ownerId: signalItem.ownerId, componentId: signalItem.componentId});
+            this.signalMap.delete(signalItem.id);
+        }
     }
 
     unregisterDomTree(node: Node & NodeExtra) {
@@ -163,6 +214,9 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
             channel.send('snapshotComponent', message);
         }
         rootNodes.forEach(n => sendDomNodeAppendedSnapshot(n, channel));
+        for (const signalItem of this.signalMap.values()) {
+            channel.send('snapshotSignal', {signalId: signalItem.id, ownerId: signalItem.ownerId, componentId: signalItem.componentId, name: signalItem.name, value: serializeValue(signalItem.value)});
+        }
         channel.send('snapshotCompleted', {});
     }
 }
@@ -184,6 +238,14 @@ function newComponentId(): string {
 
 function newDomNodeId(): string {
     return `d-${++nextId}`;
+}
+
+function newSignalId(): string {
+    return `s-${++nextId}`;
+}
+
+function newComputationId(): string {
+    return `o-${++nextId}`;
 }
 
 function createRegistry(options: RegistryOptions): Registry {

@@ -2,13 +2,12 @@ import type {Component} from 'solid-js';
 import {createSignal, createEffect, Show, Switch, Match} from 'solid-js';
 
 import type {ConnectionState} from '../connection/connection-state-types';
-import type {RootsData} from '../data/component-data-types';
 import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
 import type {Options} from '../../options/options-types';
 import {LOCAL_STORAGE_DEVTOOLS_COMPONENTS_PANEL_RESIZE_KEY} from '../storage-keys';
-import type {ComponentData} from '../data/component-data-types';
+import type {TreeSelection} from './contexts/tree-selection-types';
 import {ChannelContext} from './contexts/channel-context';
-import {SelectedComponentContext} from './contexts/selected-component-context';
+import {ComponentTreeSelectionContext} from './contexts/tree-selection-context';
 import {OptionsContext} from './contexts/options-context';
 import {buttonClass} from './common-styles';
 import {ComponentTree} from './component-tree';
@@ -16,7 +15,6 @@ import {ComponentDetails} from './component-details';
 
 interface ComponentsPanelProps {
     connectionState: ConnectionState;
-    rootsData: RootsData;
     registryMirror: RegistryMirror;
     options: Options;
 }
@@ -120,15 +118,15 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
         }
     });
 
-    const [selectedComponent, setSelectedComponent] = createSignal<ComponentData | undefined>();
+    const [treeSelection, setTreeSelection] = createSignal<TreeSelection | undefined>();
 
     return <div ref={outerContainer} classList={{'text-sm': true, 'h-full': true, 'w-full': true, 'flex': true, 'sm:flex-row': true, 'flex-col': true, 'sm:cursor-ew-resize': resizing(), 'cursor-ns-resize': resizing()}}>
         <ConnectionStateSwitch connectionState={props.connectionState}>
-            <SelectedComponentContext.Provider value={{selectedComponent, setSelectedComponent}}>
+            <ComponentTreeSelectionContext.Provider value={{treeSelection, setTreeSelection}}>
                 <OptionsContext.Provider value={props.options}>
 
                     <div ref={initSplitter} class="overflow-auto grow-0 shrink-0 sm:[flex-basis:var(--horizontal-resize-percent)] [flex-basis:var(--vertical-resize-percent)] overflow-auto">
-                        <ComponentTree {...{roots: props.rootsData.roots, registryMirror: props.registryMirror}} />
+                        <ComponentTree {...{registryMirror: props.registryMirror}} />
                     </div>
 
                     <div class="grow-0 shrink-0 basis-0 relative">
@@ -140,7 +138,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
                     </div>
 
                 </OptionsContext.Provider>
-            </SelectedComponentContext.Provider>
+            </ComponentTreeSelectionContext.Provider>
         </ConnectionStateSwitch>
     </div>;
 };

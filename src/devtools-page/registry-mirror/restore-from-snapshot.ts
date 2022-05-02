@@ -17,7 +17,11 @@ function restoreMirrorFromSnapshot(registryMirror: RegistryMirror, message: Excl
 
     } else if (message.kind === 'snapshotDomNodeAppended') {
         registryMirror.domNodeAppended(message);
+
+    }  else if (message.kind === 'snapshotSignal') {
+        registryMirror.signalCreated(message);
     }
+
 }
 
 function restoreComponentResult(registryMirror: RegistryMirror, componentId: string, result: ComponentItemResult[], index: number[]): void {

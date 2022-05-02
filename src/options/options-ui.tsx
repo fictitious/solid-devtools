@@ -34,7 +34,6 @@ const OptionsForm: Component<{options: Options}> = props => {
             {optionsCheckbox('exposeIds', `Expose internal ids`)}
             {optionsCheckbox('showLogPanel', `Show internal debug log panel`)}
             {optionsCheckbox('logAllMessages', `Log all messages from page`)}
-            {optionsCheckbox('exposeDebuggerHack', `Expose debugger hack`)}
         </fieldset>
     </form>;
 };

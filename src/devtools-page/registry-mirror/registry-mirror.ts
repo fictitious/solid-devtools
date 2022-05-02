@@ -1,24 +1,36 @@
 
-import type {ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended} from '../../channel/channel-message-types';
+import type {Accessor, Setter} from 'solid-js';
+import {createSignal} from 'solid-js';
+
+import type {
+    ComponentRendered, ComponentDisposed, DomNodeRegistered, DomNodeRemoved, DomNodeIsRoot, DomNodeRootDisposed, DomNodeAddedResultOf, DomNodeInserted, DomNodeAppended, SignalCreated, SignalUpdated, SignalDisposed
+} from '../../channel/channel-message-types';
 import type {Logger} from '../data/logger-types';
-import type {RootsData} from '../data/component-data-types';
-import {createRoot, createComponent} from '../data/component-data';
-import type {ComponentMirror, ComponentResultMirror, DomNodeMirror, RegistryRoot, RegistryMirror} from './registry-mirror-types';
+import type {DomRootData} from '../data/component-data-types';
+import {createDomRoot, createComponent} from '../data/component-data';
+import type {SignalData} from '../data/signal-data-types';
+import {addSignal, updateSignal, removeSignal} from '../data/signal-data';
+import type {ComponentMirror, ComponentResultMirror, DomNodeMirror, RegistryDomRoot, RegistryMirror} from './registry-mirror-types';
 import {connectDomTree, disconnectDomTree, connectedResultAdded, findAndConnectToParentComponent, removeComponentFromTree, removeDomNodeFromComponentResult} from './connect-components';
 
 class RegistryMirrorImpl implements RegistryMirror {
 
     componentMap: Map<string, ComponentMirror>;
-    roots: RegistryRoot[];
+    domRoots: RegistryDomRoot[];
     domNodeMap: Map<string, DomNodeMirror>;
+    public domRootsData: Accessor<DomRootData[]>;
+    setDomRootsData: Setter<DomRootData[]>;
+    public globalSignals: Accessor<SignalData[]>;
+    setGlobalSignals: Setter<SignalData[]>;
 
     constructor(
-        public rootsData: RootsData,
         public logger: Logger
     ) {
         this.componentMap = new Map();
-        this.roots = [];
+        this.domRoots = [];
         this.domNodeMap = new Map();
+        [this.domRootsData, this.setDomRootsData] = createSignal([]);
+        [this.globalSignals, this.setGlobalSignals] = createSignal([]);
     }
 
     getComponent(id: string): ComponentMirror | undefined {
@@ -69,14 +81,14 @@ class RegistryMirrorImpl implements RegistryMirror {
         if (!node) {
             this.logger('error', `RegistryMirror.domNodeIsRoot: unknown dom node id: ${id}`);
         } else {
-            const rootIndex = this.roots.findIndex(r => r.domNode === node);
+            const rootIndex = this.domRoots.findIndex(r => r.domNode === node);
             if (rootIndex < 0) {
                 const components = connectDomTree(this.componentMap, this.logger, node);
-                const root = createRoot(this.rootsData, node, components);
-                for (const component of root.components) {
-                    component.componentParent = {parentKind: 'root', root};
+                const domRoot = createDomRoot(this.setDomRootsData, node, components);
+                for (const component of domRoot.components) {
+                    component.componentParent = {parentKind: 'domroot', domRoot};
                 }
-                this.roots.push(root);
+                this.domRoots.push(domRoot);
             }
         }
     };
@@ -86,11 +98,11 @@ class RegistryMirrorImpl implements RegistryMirror {
         if (!node) {
             this.logger('error', `RegistryMirror.domNodeRootDisposed: unknown dom node id: ${id}`);
         } else {
-            const rootIndex = this.roots.findIndex(r => r.domNode === node);
+            const rootIndex = this.domRoots.findIndex(r => r.domNode === node);
             if (rootIndex < 0) {
                 this.logger('error', `RegistryMirror.domNodeRootDisposed: dom node is not root. id=${id}`);
             } else {
-                this.roots.splice(rootIndex, 1);
+                this.domRoots.splice(rootIndex, 1);
                 disconnectDomTree(node);
             }
         }
@@ -125,7 +137,7 @@ class RegistryMirrorImpl implements RegistryMirror {
                 updateComponentResult(component, index, node);
 
                 if (node.connected && !component.componentParent) {
-                    connectedResultAdded(this.roots, this.componentMap, this.logger, component, node, indexInResult);
+                    connectedResultAdded(this.domRoots, this.componentMap, this.logger, component, node, indexInResult);
                 }
             }
         }
@@ -155,7 +167,7 @@ class RegistryMirrorImpl implements RegistryMirror {
                 }
                 if (filtered.length) {
                     findAndConnectToParentComponent({
-                        roots: this.roots,
+                        domRoots: this.domRoots,
                         componentMap: this.componentMap,
                         logger: this.logger,
                         parentNode,
@@ -186,7 +198,7 @@ class RegistryMirrorImpl implements RegistryMirror {
                     }
                     if (filtered.length) {
                         findAndConnectToParentComponent({
-                            roots: this.roots,
+                            domRoots: this.domRoots,
                             componentMap: this.componentMap,
                             logger: this.logger,
                             parentNode,
@@ -198,6 +210,24 @@ class RegistryMirrorImpl implements RegistryMirror {
                 }
             }
         }
+    };
+
+    signalCreated = ({signalId, componentId, name, value}: SignalCreated) => {
+        const componentMirror = componentId && this.componentMap.get(componentId);
+        const setSignals = componentMirror ? componentMirror.componentData.setSignals : this.setGlobalSignals;
+        addSignal({setSignals, signalId, name, value});
+    };
+
+    signalUpdated = ({signalId, componentId, value}: SignalUpdated) => {
+        const componentMirror = componentId && this.componentMap.get(componentId);
+        const setSignals = componentMirror ? componentMirror.componentData.setSignals : this.setGlobalSignals;
+        updateSignal(setSignals, signalId, value);
+    };
+
+    signalDisposed = ({signalId, componentId}: SignalDisposed) => {
+        const componentMirror = componentId && this.componentMap.get(componentId);
+        const setSignals = componentMirror ? componentMirror.componentData.setSignals : this.setGlobalSignals;
+        removeSignal(setSignals, signalId);
     };
 
     validateInsertionIndex({parentNode, prevId, nextId}: {parentNode: DomNodeMirror; prevId?: string; nextId?: string}): number | undefined {
@@ -265,9 +295,9 @@ class RegistryMirrorImpl implements RegistryMirror {
 
     removeDomNode(node: DomNodeMirror): void {
         removeNodeFromChildren(node);
-        const rootIndex = this.roots.findIndex(r => r.domNode === node);
+        const rootIndex = this.domRoots.findIndex(r => r.domNode === node);
         if (rootIndex >= 0) {
-            this.roots.splice(rootIndex, 1);
+            this.domRoots.splice(rootIndex, 1);
         }
         this.removeDomTree(node);
     }
@@ -286,9 +316,9 @@ class RegistryMirrorImpl implements RegistryMirror {
 
     clear() {
         this.componentMap.clear();
-        this.roots.length = 0;
+        this.domRoots.length = 0;
         this.domNodeMap.clear();
-        this.rootsData.setRoots([]);
+        this.setDomRootsData([]);
     }
 }
 
@@ -354,8 +384,8 @@ function collectResultNodes(result: ComponentResultMirror[], node: DomNodeMirror
     }
 }
 
-function createRegistryMirror(rootsData: RootsData, logger: Logger): RegistryMirror {
-    return new RegistryMirrorImpl(rootsData, logger);
+function createRegistryMirror(logger: Logger): RegistryMirror {
+    return new RegistryMirrorImpl(logger);
 }
 
 export {createRegistryMirror};

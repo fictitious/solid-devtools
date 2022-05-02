@@ -1,8 +1,8 @@
 
 
-import type {Registry, NodeExtra} from './registry-types';
-import {solidDevtoolsKey} from './registry-types';
-import {findOrRegisterAncestorOrSelf, findRegisteredDescendantsOrSelf, findRegisteredPrevSiblingOrSelf, findRegisteredNextSiblingOrSelf} from './node-functions';
+import type {Registry, NodeExtra} from '../registry/registry-types';
+import {solidDevtoolsKey} from '../registry/registry-types';
+import {findOrRegisterAncestorOrSelf, findRegisteredDescendantsOrSelf, findRegisteredPrevSiblingOrSelf, findRegisteredNextSiblingOrSelf} from '../registry/node-functions';
 
 // intercept and transmit to devtools all operations
 // performed on parent in insertExpression() in the dom-expressions src/client.js

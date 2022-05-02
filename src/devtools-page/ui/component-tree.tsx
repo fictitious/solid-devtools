@@ -1,23 +1,33 @@
 
 import type {Accessor, Component} from 'solid-js';
-import {For, useContext, onCleanup} from 'solid-js';
+import {For, useContext, onCleanup, createMemo} from 'solid-js';
 
 import type {ComponentDisposed, InspectComponentSelected} from '../../channel/channel-message-types';
-import type {RootData, ComponentData} from '../data/component-data-types';
+import type {DomRootData, ComponentData} from '../data/component-data-types';
+import type {SignalData} from '../data/signal-data-types';
 import type {RegistryMirror} from '../registry-mirror/registry-mirror-types';
-import {SelectedComponentContext} from './contexts/selected-component-context';
+import {ComponentTreeSelectionContext, selectedComponent, selectedGlobalSignals} from './contexts/tree-selection-context';
 import {OptionsContext} from './contexts/options-context';
 import {ChannelContext} from './contexts/channel-context';
+import {useChannelListener} from './contexts/use-channel-listener';
 import {InspectElementsButton} from './inspect-elements-button';
-import {useChannelListener} from './use-channel-listener';
 
 const componentRowElements: Map<string, Element> = new Map();
+
+function treeRowClassList(isSelected: () => boolean) {
+    return {
+        'cursor-default': true,
+        'bg-slate-300': isSelected(),
+        'hover:bg-slate-100': !isSelected(),
+        'dark:hover:bg-slate-200': !isSelected()
+    };
+}
 
 const ComponentUI: Component<ComponentData> = componentData => {
     const level = componentData.level() ?? 0;
     const indent = 1.5 * (level - 1);
-    const {selectedComponent, setSelectedComponent} = useContext(SelectedComponentContext)!;
-    const isSelected = () => componentData.id === selectedComponent()?.id;
+    const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
+    const isSelected = createMemo(() => componentData.id === selectedComponent()?.id);
     const exposeIds = useContext(OptionsContext)?.exposeIds;
     const channel = useContext(ChannelContext)!;
     const onMouseEnter = (cd: ComponentData) => channel.send('highlightComponent', {componentId: cd.id});
@@ -26,15 +36,10 @@ const ComponentUI: Component<ComponentData> = componentData => {
     return <>
         <div
             ref={element => componentRowElements.set(componentData.id, element)}
-            onclick={[setSelectedComponent, componentData]}
+            onclick={[setTreeSelection, {selectionType: 'component', componentData}]}
             onmouseenter={[onMouseEnter, componentData]}
             onmouseleave={onMouseLeave}
-            classList={{
-                'cursor-default': true,
-                'bg-slate-300': isSelected(),
-                'hover:bg-slate-100': !isSelected(),
-                'dark:hover:bg-slate-200': !isSelected()
-            }}
+            classList={treeRowClassList(isSelected)}
             style={{'padding-left': `${indent}em`}}
         >
             {componentText(componentData, exposeIds)}
@@ -49,15 +54,25 @@ function componentText(componentData: ComponentData, exposeIds?: boolean): strin
     return componentData.name + id;
 }
 
-const RootUI: Component<RootData> = rootData =>
-    <For each={rootData.getChildren()}>{component => <ComponentUI {...component} />}</For>
+const GlobalSignals: Component<{globalSignals: Accessor<SignalData[]>}> = props => {
+    const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
+    const isSelected = createMemo(() => !!selectedGlobalSignals());
+    return <div onclick={[setTreeSelection, {selectionType: 'globalSignals', globalSignals: props.globalSignals}]} classList={treeRowClassList(isSelected)}>
+        Global Signals
+    </div>
+    ;
+};
+
+const DomRootUI: Component<DomRootData> = domRootData =>
+    <For each={domRootData.getChildren()}>{component => <ComponentUI {...component} />}</For>
 ;
 
-const ComponentTree: Component<{roots: Accessor<RootData[]>; registryMirror: RegistryMirror}> = props => {
-    const {selectedComponent, setSelectedComponent} = useContext(SelectedComponentContext)!;
+const ComponentTree: Component<{registryMirror: RegistryMirror}> = props => {
+    const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
+    const selectedComponentId = createMemo(() => selectedComponent()?.id);
     useChannelListener('componentDisposed', ({id}: ComponentDisposed) => {
-        if (id === selectedComponent()?.id) {
-            setSelectedComponent(undefined);
+        if (id === selectedComponentId()) {
+            setTreeSelection(undefined);
         }
     });
     useChannelListener('inspectComponentSelected', ({componentId}: InspectComponentSelected) => {
@@ -65,7 +80,7 @@ const ComponentTree: Component<{roots: Accessor<RootData[]>; registryMirror: Reg
         if (componentData) {
             const componentRowElement = componentRowElements.get(componentId);
             componentRowElement?.scrollIntoView({block: 'center'});
-            setSelectedComponent(componentData);
+            setTreeSelection({selectionType: 'component', componentData});
         }
     });
 
@@ -76,7 +91,8 @@ const ComponentTree: Component<{roots: Accessor<RootData[]>; registryMirror: Reg
         </div>
         <div class="flex-auto w-full overflow-auto text-xs leading-snug">
             <div class="min-w-fit">
-                <For each={props.roots()}>{root => <RootUI {...root} />}</For>
+                <GlobalSignals globalSignals={props.registryMirror.globalSignals} />
+                <For each={props.registryMirror.domRootsData()}>{domRootData => <DomRootUI {...domRootData} />}</For>
             </div>
         </div>
     </div>

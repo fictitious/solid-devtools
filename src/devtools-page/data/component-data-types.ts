@@ -3,6 +3,8 @@ import type {Accessor, Setter} from 'solid-js';
 
 import type {SerializedValue} from '../../channel/channel-transport-types';
 
+import type {SignalData} from './signal-data-types';
+
 /*
 naive (non-optimized) reactive data type structures for showing component tree
 */
@@ -13,7 +15,7 @@ export interface ComponentChildrenData {
     level: Accessor<number | undefined>;
 }
 
-export interface RootData extends ComponentChildrenData {
+export interface DomRootData extends ComponentChildrenData {
     level: Accessor<0>;
     domNodeId: string;
 }
@@ -23,9 +25,6 @@ export interface ComponentData extends ComponentChildrenData {
     name: string;
     rawName: string;
     props: SerializedValue;
-}
-
-export interface RootsData {
-    roots: Accessor<RootData[]>;
-    setRoots: Setter<RootData[]>;
+    getSignals: Accessor<SignalData[]>;
+    setSignals: Setter<SignalData[]>;
 }

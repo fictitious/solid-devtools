@@ -1,7 +1,8 @@
 
+
 import type {ComponentChildrenData} from '../data/component-data-types';
 import {updateChildrenData} from '../data/component-data';
-import type {ComponentMirror, ComponentResultMirror, ComponentParent, DomNodeMirror, RegistryRoot} from './registry-mirror-types';
+import type {ComponentMirror, ComponentResultMirror, ComponentParent, DomNodeMirror, RegistryDomRoot} from './registry-mirror-types';
 import type {Logger} from '../data/logger-types';
 import {stringify} from './stringify';
 
@@ -91,7 +92,7 @@ function disconnectDomTree(node: DomNodeMirror): void {
 }
 
 // when a connected node is added to the result of a not yet connected component, connect the component
-function connectedResultAdded(roots: RegistryRoot[], componentMap: Map<string, ComponentMirror>, logger: Logger, component: ComponentMirror, node: DomNodeMirror, indexInResult: number): void {
+function connectedResultAdded(domRoots: RegistryDomRoot[], componentMap: Map<string, ComponentMirror>, logger: Logger, component: ComponentMirror, node: DomNodeMirror, indexInResult: number): void {
     let connectedWithSameResult: ComponentMirror | undefined;
     let i = indexInResult;
     // if there's some already connected component below with the same result, insert between that component and its parent
@@ -163,7 +164,7 @@ function connectedResultAdded(roots: RegistryRoot[], componentMap: Map<string, C
                 if (index < 0) {
                     logger('error', `connectedResultAdded: node ${node.id} is missing from its parent children: parent: ${stringify(parentNode)}`);
                 } else {
-                    findAndConnectToParentComponent({roots, componentMap, logger, components: [component], parentNode, prevSiblingIndex: index - 1, nextSiblingIndex: index + 1});
+                    findAndConnectToParentComponent({domRoots, componentMap, logger, components: [component], parentNode, prevSiblingIndex: index - 1, nextSiblingIndex: index + 1});
                 }
             }
         }
@@ -171,7 +172,7 @@ function connectedResultAdded(roots: RegistryRoot[], componentMap: Map<string, C
 }
 
 interface FindAndConnectToParentComponent {
-    roots: RegistryRoot[];
+    domRoots: RegistryDomRoot[];
     componentMap: Map<string, ComponentMirror>;
     logger: Logger;
     components: ComponentMirror[]; // components to find parent for
@@ -179,7 +180,7 @@ interface FindAndConnectToParentComponent {
     prevSiblingIndex: number;  // which are between prevSiblingIndex and nextSiblingIndex
     nextSiblingIndex: number; // in the parentNode children
 }
-function findAndConnectToParentComponent({roots, componentMap, logger, parentNode, components, prevSiblingIndex, nextSiblingIndex}: FindAndConnectToParentComponent): void {
+function findAndConnectToParentComponent({domRoots, componentMap, logger, parentNode, components, prevSiblingIndex, nextSiblingIndex}: FindAndConnectToParentComponent): void {
     if (!findAndConnectToParentComponentInPrevSiblings({components, nodes: parentNode.children, siblingIndex: prevSiblingIndex, componentMap, logger})) {
         if (!findAndConnectToParentComponentInNextSiblings({components, nodes: parentNode.children, siblingIndex: nextSiblingIndex, componentMap, logger})) {
             // no components found in siblings - see if parentNode has one, starting from the bottom
@@ -200,26 +201,26 @@ function findAndConnectToParentComponent({roots, componentMap, logger, parentNod
                 connectToParentComponent({parentComponent, parentNode, components, logger, componentMap});
             } else {
                 if (!parentNode.parent) {
-                    const root = roots.find(r => r.domNode === parentNode);
-                    if (!root) {
-                        logger('error', `findAndConnectToParentComponent: connected node without a parent is not present in roots: node id ${parentNode.id}`);
+                    const domRoot = domRoots.find(r => r.domNode === parentNode);
+                    if (!domRoot) {
+                        logger('error', `findAndConnectToParentComponent: connected node without a parent is not present in domRoots: node id ${parentNode.id}`);
                     } else {
-                        // if we got here there's (really ?) no other components below this root
-                        if (root.components.length > 0) {
-                            logger('warn', `findAndConnectToParentComponent: no components found in the connected nodes tree under the root node,` +
-                                            ` but root has child components: parent node id ${parentNode.id} root ${stringify(root)}`);
+                        // if we got here there's (really ?) no other components below this domRoot
+                        if (domRoot.components.length > 0) {
+                            logger('warn', `findAndConnectToParentComponent: no components found in the connected nodes tree under the dom root node,` +
+                                            ` but dom root has child components: parent node id ${parentNode.id} dom root ${stringify(domRoot)}`);
                         }
-                        const p = {parentKind: 'root', root} as const;
+                        const p = {parentKind: 'domroot', domRoot} as const;
                         components.forEach(c => c.componentParent = p);
-                        root.components.push(...components);
-                        updateChildrenData(root.rootData, root.components);
+                        domRoot.components.push(...components);
+                        updateChildrenData(domRoot.domRootData, domRoot.components);
                     }
                 } else {
                     const index = parentNode.parent.children.indexOf(parentNode);
                     if (index < 0) {
                         logger('error', `findAndConnectToParentComponent: node ${parentNode.id} is missing from its parent children: parent: ${stringify(parentNode.parent)}`);
                     } else {
-                        findAndConnectToParentComponent({roots, componentMap, logger, parentNode: parentNode.parent, components, prevSiblingIndex: index - 1, nextSiblingIndex: index + 1});
+                        findAndConnectToParentComponent({domRoots, componentMap, logger, parentNode: parentNode.parent, components, prevSiblingIndex: index - 1, nextSiblingIndex: index + 1});
                     }
                 }
             }
@@ -305,7 +306,7 @@ function findNextSiblingAndConnectToParentComponent({components, parentComponent
     let siblingComponents: ComponentMirror[] = [];
     let i = siblingIndex;
     while (i < nodes.length && siblingComponents.length === 0) {
-        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n)).filter(c => isComponentParent({c, parentComponent}))
+        siblingComponents = nodes[i].children.flatMap(n => findConnectedComponentsAtOrBelow(componentMap, logger, n)).filter(c => isComponentParent({c, parentComponent}));
         ++i;
     }
     return connectToNextSiblingParentComponent({siblingComponents, components, logger});
@@ -368,7 +369,7 @@ function connectToParentComponent({parentComponent, parentNode, components, logg
     }
 }
 
-function isComponentParent({c, parentComponent}: {c: ComponentMirror, parentComponent: ComponentMirror}): boolean {
+function isComponentParent({c, parentComponent}: {c: ComponentMirror; parentComponent: ComponentMirror}): boolean {
     return c.componentParent?.parentKind === 'component' && c.componentParent.component === parentComponent;
 }
 
@@ -377,7 +378,7 @@ function sameComponentParent(c1: ComponentMirror, c2: ComponentMirror) {
         if (c1.componentParent.parentKind === 'component') {
             return c2.componentParent.parentKind === 'component' && c2.componentParent.component === c1.componentParent.component;
         } else {
-            return c2.componentParent.parentKind === 'root' && c2.componentParent.root === c1.componentParent.root;
+            return c2.componentParent.parentKind === 'domroot' && c2.componentParent.domRoot === c1.componentParent.domRoot;
         }
     } else {
         return false;
@@ -389,8 +390,8 @@ function getComponentParentChildren(componentParent: ComponentParent): {children
         const parent = componentParent.component;
         return {parentChildren: parent.children, childrenData: parent.componentData};
     } else {
-        const root = componentParent.root;
-        return {parentChildren: root.components, childrenData: root.rootData};
+        const domRoot = componentParent.domRoot;
+        return {parentChildren: domRoot.components, childrenData: domRoot.domRootData};
     }
 }
 

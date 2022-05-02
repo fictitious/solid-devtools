@@ -1,34 +1,26 @@
 
-import type {Component} from 'solid-js';
-import type {RegisterSolidInstance as SolidInstance} from 'solid-js';
+import type {Component, RegisterSolidInstance as SolidInstance} from 'solid-js';
 
-import type {ComponentItem} from './node-component-types';
-import type {Registry} from './registry-types';
+import type {ComponentItem} from '../registry/node-component-types';
+import type {Registry} from '../registry/registry-types';
 
 type ComponentResult = ReturnType<Component> | (() => ComponentResult) | ComponentResult[];
 
-function wrapComponent(comp: Component, solidInstance: SolidInstance, registry: Registry): (props: Record<string, unknown>) => ComponentResult {
-    const wrapper = new Proxy(
-        (props: Record<string, unknown>) => {
+function wrapComponent<T>(comp: Component<T>, solidInstance: SolidInstance, registry: Registry): (props: T) => ComponentResult {
+    return new Proxy(
+        (props: T) => {
 
-            const componentItem: ComponentItem = registry.registerComponent(solidInstance, comp, props);
+            const componentItem = registry.registerComponent(comp as Component, props as Record<string, unknown>);
             solidInstance.onCleanup(() => {
                 registry.unregisterComponent(componentItem.id);
             });
 
-            const compMemo = solidInstance.createMemo(() => {
-                if (componentItem.debugBreak) {
-                    const debugBreak = componentItem.debugBreak();
-                    return solidInstance.untrack(() => {
-                        if (debugBreak) debugger;
-                        return comp(props);
-                    });
-                } else {
-                    return solidInstance.untrack(() => comp(props));
-                }
-            });
-
-            return wrapComponentResult(componentItem, compMemo(), undefined, registry);
+            return solidInstance.devComponent(
+                comp,
+                props,
+                r => wrapComponentResult(componentItem, r, undefined, registry),
+                componentItem.id
+            );
         }, {
             get(_, property: keyof Component) {
                 return comp[property];
@@ -39,7 +31,6 @@ function wrapComponent(comp: Component, solidInstance: SolidInstance, registry: 
             }
         }
     );
-    return wrapper;
 }
 
 function wrapComponentResult(componentItem: ComponentItem, result: ComponentResult, index: number[] | undefined, registry: Registry): ComponentResult {

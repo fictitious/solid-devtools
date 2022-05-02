@@ -1,15 +1,15 @@
 
 import type {SerializedValue} from '../../channel/channel-transport-types';
-import type {RegistryRoot, ComponentMirror, ComponentParent, ComponentResultMirror, DomNodeMirror} from './registry-mirror-types';
+import type {RegistryDomRoot, ComponentMirror, ComponentParent, ComponentResultMirror, DomNodeMirror} from './registry-mirror-types';
 
-function stringify(o: ComponentParent | DomNodeMirror | RegistryRoot): string {
+function stringify(o: ComponentParent | DomNodeMirror | RegistryDomRoot): string {
     let s;
     if ('parentKind' in o) {
         s = prepareComponentParentForStringify({parent: o, deep: true});
     } else if ('nodeType' in o) {
         s = prepareDomNodeForStringify(o);
-    } else if ('rootData' in o) {
-        s = prepareRegistryRootForStringify(o);
+    } else if ('domRootData' in o) {
+        s = prepareRegistryDomRootForStringify(o);
     }
     return JSON.stringify(s);
 }
@@ -37,8 +37,8 @@ function prepareComponentForStringify(component: ComponentMirror): StringifiedCo
 type StringifiedComponentParent = StringifiedComponentParentRoot | StringifiedComponentParentComponent;
 
 interface StringifiedComponentParentRoot {
-    parentKind: 'root';
-    root: StringifiedRegistryRoot;
+    parentKind: 'domroot';
+    domRoot: StringifiedRegistryDomRoot;
 }
 
 interface StringifiedComponentParentComponent {
@@ -51,21 +51,21 @@ function prepareComponentParentForStringify({parent, deep = false}: {parent: Com
         if (parent.parentKind === 'component') {
             return {parentKind: parent.parentKind, component: deep ? prepareComponentForStringify(parent.component) : parent.component.id};
         } else {
-            return {parentKind: parent.parentKind, root: prepareRegistryRootForStringify(parent.root)};
+            return {parentKind: parent.parentKind, domRoot: prepareRegistryDomRootForStringify(parent.domRoot)};
         }
     } else {
         return undefined;
     }
 }
 
-interface StringifiedRegistryRoot {
+interface StringifiedRegistryDomRoot {
     domNode: string;
     components: string[];
 }
-function prepareRegistryRootForStringify(root: RegistryRoot): StringifiedRegistryRoot {
+function prepareRegistryDomRootForStringify(domRoot: RegistryDomRoot): StringifiedRegistryDomRoot {
     return {
-        domNode: root.domNode.id,
-        components: root.components.map(c => c.id)
+        domNode: domRoot.domNode.id,
+        components: domRoot.components.map(c => c.id)
     };
 }
 

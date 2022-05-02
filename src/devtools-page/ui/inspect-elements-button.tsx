@@ -4,7 +4,7 @@ import {createSignal, useContext} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-types';
 import {ChannelContext} from './contexts/channel-context';
-import {useChannelListener} from './use-channel-listener';
+import {useChannelListener} from './contexts/use-channel-listener';
 import svgInspectElementOnPage from './assets/inspect-element-on-page.svg';
 
 const InspectElementsButton: Component = () => {

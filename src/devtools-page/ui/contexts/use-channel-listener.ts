@@ -1,8 +1,8 @@
 
 import {useContext, onMount, onCleanup} from 'solid-js';
 
-import type {FromPage, ChannelMessageFromPageMap} from '../../channel/channel-message-types';
-import {ChannelContext} from './contexts/channel-context';
+import type {FromPage, ChannelMessageFromPageMap} from '../../../channel/channel-message-types';
+import {ChannelContext} from './channel-context';
 
 function useChannelListener<K extends keyof FromPage>(k: K, listener: (msg: ChannelMessageFromPageMap[K]) => void): void {
     const channel = useContext(ChannelContext);

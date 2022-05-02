@@ -96,6 +96,23 @@
             "import/no-default-export": "off"
         }
     }, {
+        "files": ["./src/hook/wrappers/signal-wrapper.ts"],
+        "rules": {
+            "prefer-const": "off",
+            "@typescript-eslint/ban-types": ["error", {
+                "extendDefaults": true,
+                "types": {
+                    "{}": false,
+                    "Function": false
+                }
+            }]
+        }
+    }, {
+        "files": ["./src/devtools-page/ui/debug-log-panel.tsx", "src/hook/hook.ts"],
+        "rules": {
+            "no-console": "off"
+        }
+    }, {
         "files": [
             "./postcss.config.js",
             "./rollup.config.js",

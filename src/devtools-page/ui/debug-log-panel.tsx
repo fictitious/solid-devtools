@@ -13,7 +13,7 @@ const DebugLogPanel: Component<{debugLog: DebugLog; registryMirror: RegistryMirr
 
     const logRegistry = () => {
         console.log(`registryMirror`, props.registryMirror);
-        props.channel()!.send('test-message', {});
+        props.channel()!.send('consoleLogRegistry', {});
     };
     const renderer = new DebugLogRenderer();
     onMount(() => props.debugLog.attach(renderer.render));

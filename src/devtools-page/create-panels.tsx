@@ -5,13 +5,12 @@ import {render} from 'solid-js/web';
 import type {Options} from '../options/options-types';
 import type {ConnectionState} from './connection/connection-state-types';
 import {SESSION_STORAGE_DEVTOOLS_PANEL_ACTIVATED_KEY} from './storage-keys';
-import type {RootsData} from './data/component-data-types';
 import type {RegistryMirror} from './registry-mirror/registry-mirror-types';
 import type {DebugLog} from './data/logger-types';
 import {ComponentsPanel} from './ui/components-panel';
 import {DebugLogPanel} from './ui/debug-log-panel';
 
-function createPanels(connectionState: ConnectionState, rootsData: RootsData, registryMirror: RegistryMirror, options: Options, debugLog: DebugLog): void {
+function createPanels(connectionState: ConnectionState, registryMirror: RegistryMirror, options: Options, debugLog: DebugLog): void {
 
     chrome.devtools.panels.create(
         'Components',
@@ -27,7 +26,7 @@ function createPanels(connectionState: ConnectionState, rootsData: RootsData, re
                         }
                     }
                 );
-                renderPanelOnce(panelWindow, () => <ComponentsPanel connectionState={connectionState} rootsData={rootsData} registryMirror={registryMirror} options={options}/>);
+                renderPanelOnce(panelWindow, () => <ComponentsPanel connectionState={connectionState} registryMirror={registryMirror} options={options}/>);
             });
         }
     );

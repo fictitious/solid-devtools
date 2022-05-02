@@ -1,7 +1,9 @@
 import type {Component, JSX} from 'solid-js';
-import {Show, For, createSignal} from 'solid-js';
+import {Show, For, createSignal, useContext} from 'solid-js';
 
 import type {SerializedValue, SerializedArray, SerializedObject} from '../../channel/channel-transport-types';
+import type {SignalData} from '../data/signal-data-types';
+import {ChannelContext} from './contexts/channel-context';
 import svgExpanded from './assets/expanded.svg';
 import svgCollapsed from './assets/collapsed.svg';
 
@@ -12,11 +14,12 @@ interface ValueListLineProps {
     valuePrefix?: string;
     valueString: string;
     expandButton?: () => JSX.Element;
+    onclick?: () => void;
 }
 
 const ValueListLine: Component<ValueListLineProps> = props => {
     const indent = 1.5 * props.level;
-    return <div class="w-full flex cursor-default" style={{'padding-left': `${indent}em`}}>
+    return <div class="w-full flex cursor-default" style={{'padding-left': `${indent}em`}} onclick={props.onclick}>
         <div class="grow-0 shrink-0 basis-4 w-4">{props.expandButton && props.expandButton()}</div>
         <div class="grow-0 shrink-0 basis-auto text-ellipsis overflow-hidden">{props.name}</div>
         <div class="mr-2">:</div>
@@ -54,28 +57,39 @@ function inlineStringValue(value: SerializedValue, style: 'short' | 'long'): str
     }
 }
 
+interface ValueListExpandableLineProps {
+    level: number;
+    name: string;
+    value: SerializedValue;
+    onclick?: () => void;
+}
+
+const ValueListExpandableLine: Component<ValueListExpandableLineProps> = props => {
+    let nested: () => JSX.Element = () => undefined;
+    const value = props.value;
+    const lineProps = valueLineProps(props.level, props.name, value);
+    if (canExpand(value)) {
+        const [expanded, setExpanded] = createSignal(false);
+        const toggleExpanded = () => setExpanded(oldExpanded => !oldExpanded);
+        lineProps.expandButton = () => <svg onclick={toggleExpanded} class="w-4 h-4"><use href={`${expanded() ? svgExpanded : svgCollapsed}#main`}></use></svg>;
+        nested = () => <Show when={expanded()}><ValueList {...{level: props.level + 1, items: valueItems(value)}} /></Show>;
+    }
+    return <>
+        <ValueListLine {...{...lineProps, onclick: props.onclick}} />
+        {nested()}
+    </>;
+};
+
 type ItemsFunc = () => {name: string; value: SerializedValue}[];
-interface ValueListCompositeProps {
+interface ValueListProps {
     level: number;
     items: ItemsFunc;
 }
 
-const ValueListComposite: Component<ValueListCompositeProps> = props =>
-    <For each={props.items()}>{({name, value}) => {
-        let nested: () => JSX.Element = () => undefined;
-        const lineProps = valueLineProps(props.level, name, value);
-        if (canExpand(value)) {
-            const [expanded, setExpanded] = createSignal(false);
-            const toggleExpanded = () => setExpanded(oldExpanded => !oldExpanded);
-            lineProps.expandButton = () => <svg onclick={toggleExpanded} class="w-4 h-4"><use href={`${expanded() ? svgExpanded : svgCollapsed}#main`}></use></svg>;
-            nested = () => <Show when={expanded()}><ValueListComposite {...{level: props.level + 1, items: valueItems(value)}} /></Show>;
-        }
-        return <>
-            <ValueListLine {...lineProps} />
-            {nested()}
-        </>
-        ;
-    }}</For>
+const ValueList: Component<ValueListProps> = props =>
+    <For each={props.items()}>
+        {({name, value}) => <ValueListExpandableLine level={props.level} name={name} value={value} />}
+    </For>
 ;
 
 function fixArray(a: SerializedValue[]): SerializedValue[] {
@@ -106,12 +120,27 @@ function valueItems(value: SerializedArray | SerializedObject): ItemsFunc {
     }
 }
 
-const ValueList: Component<{values: SerializedValue}> = ({values}) => {
+const PropsList: Component<{values: SerializedValue}> = ({values}) => {
     if (values.t === 'array' || values.t === 'object') {
-        return <ValueListComposite level={0} items={valueItems(values)} />;
+        return <ValueList level={0} items={valueItems(values)} />;
     } else {
         return <ValueListLine {...valueLineProps(0, 'props', values)} />;
     }
 };
 
-export {ValueList};
+const SignalList: Component<{signals: SignalData[]}> = props => {
+    const channel = useContext(ChannelContext);
+    return <For each={props.signals}>{signal =>  {
+        const t = signal.value.t;
+        const name = signal.name ?? signal.id;
+        const signalClick = () => channel?.send('consoleLogSignalStack', {signalId: signal.id});
+        if (t === 'array' || t === 'object') {
+            return <ValueListExpandableLine onclick={signalClick} level={0} name={name} value={signal.value} />;
+        } else {
+            return <ValueListLine {...{...valueLineProps(0, name, signal.value), onclick: signalClick}} />;
+        }
+    }}</For>
+    ;
+};
+
+export {PropsList, SignalList};

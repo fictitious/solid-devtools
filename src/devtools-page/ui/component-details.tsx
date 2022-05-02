@@ -1,34 +1,48 @@
 
-import type {Component} from 'solid-js';
-import {Show, useContext} from 'solid-js';
+import type {Component, Accessor} from 'solid-js';
+import {Show} from 'solid-js';
 
-import {ChannelContext} from './contexts/channel-context';
-import {OptionsContext} from './contexts/options-context';
-import {SelectedComponentContext} from './contexts/selected-component-context';
-import {ValueList} from './value-list';
-import {buttonClass} from './common-styles';
+import type {SignalData} from '../data/signal-data-types';
+import {selectedComponent, selectedGlobalSignals} from './contexts/tree-selection-context';
+import {PropsList, SignalList} from './value-list';
 
-const toolbarButtonClass = `${buttonClass} mx-3 flex-none`;
+const headerTextClass = 'py-0.5 mx-3 px-3 text-solid-light text-ellipsis overflow-hidden cursor-default';
+
+const ComponentSignals: Component<{getSignals: Accessor<SignalData[]>}> = props => {
+    const when = () => {
+        const signals = props.getSignals();
+        return signals.length ? signals : undefined;
+    };
+    return <Show when={when()}>{signals => <>
+        <div class={`w-full ${headerTextClass}`}>signals</div>
+        <SignalList signals={signals} />
+    </>}</Show>
+    ;
+};
 
 const ComponentDetails: Component = () => {
 
-    const options = useContext(OptionsContext);
-    const channel = useContext(ChannelContext);
-    const {selectedComponent} = useContext(SelectedComponentContext)!;
-    const debugClick = (componentId: string) => channel?.send('debugBreak', {componentId});
-
     return <div class="h-full w-full flex flex-col">
+
         <div class="w-full flex-none flex flex-row py-1 text-xs">
             <Show when={selectedComponent()}>{component => <>
-                <div class="py-0.5 mx-3 px-3 w-16 flex-auto text-solid-light text-ellipsis overflow-hidden cursor-default">{component.name}</div>
-                <Show when={options?.exposeDebuggerHack}><button onclick={[debugClick, component.id]} class={toolbarButtonClass}>debugger</button></Show>
+                <div class={`w-16 flex-auto ${headerTextClass}`}>{component.name}</div>
             </>}</Show>
         </div>
+
         <div class="flex-auto w-full overflow-auto text-xs leading-snug">
-            <Show when={selectedComponent()}>
-                {component => <ValueList values={component.props} />}
-            </Show>
+
+            <Show when={selectedComponent()}>{component => <>
+                <PropsList values={component.props} />
+                <ComponentSignals getSignals={component.getSignals} />
+            </>}</Show>
+
+            <Show when={selectedGlobalSignals()}>{globalSignals =>
+                <SignalList signals={globalSignals()}></SignalList>
+            }</Show>
+
         </div>
+
     </div>
     ;
 };
