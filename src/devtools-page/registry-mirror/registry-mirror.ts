@@ -319,6 +319,7 @@ class RegistryMirrorImpl implements RegistryMirror {
         this.domRoots.length = 0;
         this.domNodeMap.clear();
         this.setDomRootsData([]);
+        this.setGlobalSignals([]);
     }
 }
 
