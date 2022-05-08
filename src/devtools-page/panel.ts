@@ -20,3 +20,5 @@ Object.assign(window, {injectStyles: (getLinkTags: () => HTMLLinkElement[]) => {
         }
     }
 }});
+
+export {};

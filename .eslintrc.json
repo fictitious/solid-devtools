@@ -126,6 +126,20 @@
             "import/no-default-export": "off"
         }
     }, {
+        "files": [
+            "*.test.ts"
+        ],
+        "parserOptions": {
+            "project": "tsconfig.test.json"
+        },
+        "rules": {
+            "import/no-extraneous-dependencies": ["error", {
+                "devDependencies": true, 
+                "optionalDependencies": false, 
+                "peerDependencies": false
+            }]
+        }
+    }, {
         "files": ["*.html"],
         "parser": "@html-eslint/parser",
         "extends": ["plugin:@html-eslint/recommended"]

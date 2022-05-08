@@ -2,9 +2,11 @@
     "compilerOptions": {
         "strict": true,
         "types": ["chrome"],
+        "lib": ["es2019", "dom"],
         "target": "esnext",
         "module": "esnext",
-        "lib": ["es2019", "dom"],
+        "importsNotUsedAsValues": "error",
+        "isolatedModules": true,
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
