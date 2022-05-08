@@ -12,6 +12,7 @@ export type ComponentResultMirror = DomNodeMirror | ComponentResultMirror[] | un
 
 export interface ComponentMirror {
     id: string;
+    sequenceNumber: number;
     result: ComponentResultMirror[];
     connectedNodeParentId?: string;
     componentParent?: ComponentParent;
@@ -44,7 +45,7 @@ export interface DomNodeMirror {
     connected?: boolean;
     parent?: DomNodeMirror;
     children: DomNodeMirror[];
-    resultOf: string[];
+    resultOf: {id: string; sequenceNumber: number}[];
 }
 
 // omit 'messageSerial' because acks are handled by RegistryMirrorConnection

@@ -15,11 +15,12 @@ naive (non-optimized) reactive data for showing component tree
 function createDomRoot(setDomRootsData: Setter<DomRootData[]>, domNode: DomNodeMirror, components: ComponentMirror[]): RegistryDomRoot {
     const [getChildren, setChildren] = createSignal<ComponentData[]>(components.map(c => c.componentData));
     const domRootData: DomRootData = {domNodeId: domNode.id, getChildren, setChildren, level: () => 0};
-    const domRoot = {domNode, components, domRootData} as RegistryDomRoot;
+    const domRoot = {domNode, components, domRootData};
     setDomRootsData(domRootsData => [...domRootsData, domRootData]);
     return domRoot;
 }
 
+let lastComponentSequenceNumber = 0;
 interface CreateComponent {
     id: string;
     name: string;
@@ -30,7 +31,7 @@ function createComponent({id, name, rawName, props}: CreateComponent): Component
     const [getChildren, setChildren] = createSignal<ComponentData[]>([]);
     const [getSignals, setSignals] = createSignal<SignalData[]>([]);
     const componentData: ComponentData = {id, name, rawName, props, getChildren, setChildren, getSignals, setSignals, level: () => undefined};
-    return {id, componentData, result: [], children: []};
+    return {id, sequenceNumber: ++lastComponentSequenceNumber, componentData, result: [], children: []};
 }
 
 function updateChildrenData(childrenData: ComponentChildrenData, children: ComponentMirror[]): void {

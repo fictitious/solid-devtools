@@ -118,19 +118,21 @@ class RegistryMirrorImpl implements RegistryMirror {
                 this.logger('error', `RegistryMirror.domNodeAddedResultOf: unknown component id: ${resultOf}`);
             } else {
                 // connect-components code assumes that resultOf is sorted according to the component position in the tree from bottom to top
-                // this is maintained here, relying on the component id assigned sequentially as components are rendered
-                // and upper components are rendered before lower, so it's enough to keep it in descending order of component ids (resultOf is an id)
-                let indexInResult = node.resultOf.indexOf(resultOf);
+                // this is maintained here, relying on the fact that upper components are rendered before lower
+                // so it's enough to keep it in descending order of component sequenceNumbers
+
+                let indexInResult = node.resultOf.findIndex(r => r.id === resultOf);
                 if (indexInResult < 0) {
-                    if (node.resultOf.length === 0 || resultOf < node.resultOf[node.resultOf.length - 1]) {
-                        node.resultOf.push(resultOf);
+                    const sequenceNumber = component.sequenceNumber;
+                    if (node.resultOf.length === 0 || sequenceNumber < node.resultOf[node.resultOf.length - 1].sequenceNumber) {
+                        node.resultOf.push({id: resultOf, sequenceNumber});
                         indexInResult = node.resultOf.length - 1;
                     } else {
                         indexInResult = node.resultOf.length - 1;
-                        while (indexInResult > 0 && resultOf > node.resultOf[indexInResult - 1]) {
+                        while (indexInResult > 0 && sequenceNumber > node.resultOf[indexInResult - 1].sequenceNumber) {
                             --indexInResult;
                         }
-                        node.resultOf.splice(indexInResult, 0, resultOf);
+                        node.resultOf.splice(indexInResult, 0, {id: resultOf, sequenceNumber});
                     }
                 }
 
@@ -341,7 +343,7 @@ function updateNodesResultOf(result: ComponentResultMirror[], componentId: strin
         if (Array.isArray(r)) {
             updateNodesResultOf(r, componentId);
         } else if (r) {
-            const resultIndex = r.resultOf.indexOf(componentId);
+            const resultIndex = r.resultOf.findIndex(rc => rc.id === componentId);
             if (resultIndex >= 0) {
                 r.resultOf.splice(resultIndex, 1);
             }

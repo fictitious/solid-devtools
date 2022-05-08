@@ -41,7 +41,7 @@ function connectNodeResultOf(componentMap: Map<string, ComponentMirror>, logger:
         logger('error', `connetNodeResultOf: connected result node is root: this is unexpected. node id ${node.id}`);
     } else {
         let lowerComponent: ComponentMirror | undefined;
-        for (const componentId of node.resultOf) {
+        for (const {id: componentId} of node.resultOf) {
             const component = componentMap.get(componentId);
             if (!component) {
                 logger('error', `connectNodeResultOf: component id ${componentId} is not found for result node ${node.id}`);
@@ -98,9 +98,9 @@ function connectedResultAdded(domRoots: RegistryDomRoot[], componentMap: Map<str
     // if there's some already connected component below with the same result, insert between that component and its parent
     while (i > 0 && !connectedWithSameResult) {
         --i;
-        const resultOf = componentMap.get(node.resultOf[i]);
+        const resultOf = componentMap.get(node.resultOf[i].id);
         if (!resultOf) {
-            logger('error', `connectedResultAdded: component id ${node.resultOf[i]} is not found for result node ${node.id}`);
+            logger('error', `connectedResultAdded: component id ${node.resultOf[i].id} is not found for result node ${node.id}`);
         } else {
             if (resultOf.componentParent) {
                 connectedWithSameResult = resultOf;
@@ -187,9 +187,9 @@ function findAndConnectToParentComponent({domRoots, componentMap, logger, parent
             let parentComponent: ComponentMirror | undefined;
             let i = 0;
             while (i < parentNode.resultOf.length && !parentComponent) {
-                const resultOf = componentMap.get(parentNode.resultOf[i]);
+                const resultOf = componentMap.get(parentNode.resultOf[i].id);
                 if (!resultOf) {
-                    logger('error', `findAndConnectToParentComponent: component id ${parentNode.resultOf[i]} is not found for result node ${parentNode.id}`);
+                    logger('error', `findAndConnectToParentComponent: component id ${parentNode.resultOf[i].id} is not found for result node ${parentNode.id}`);
                 } else {
                     if (resultOf.connectedNodeParentId !== undefined && resultOf.connectedNodeParentId === parentNode.parent?.id) {
                         parentComponent = resultOf;
@@ -400,9 +400,9 @@ function findConnectedComponentsAtOrBelow(componentMap: Map<string, ComponentMir
     let i = node.resultOf.length;
     while (i > 0 && !component) {
         --i;
-        const resultOf = componentMap.get(node.resultOf[i]);
+        const resultOf = componentMap.get(node.resultOf[i].id);
         if (!resultOf) {
-            logger('error', `findConnectedComponentsBelow: component id ${node.resultOf[i]} is not found for result node ${node.id}`);
+            logger('error', `findConnectedComponentsBelow: component id ${node.resultOf[i].id} is not found for result node ${node.id}`);
         } else {
             if (resultOf.connectedNodeParentId !== undefined && resultOf.connectedNodeParentId === node.parent?.id) {
                 component = resultOf;
@@ -440,7 +440,7 @@ function removeComponentFromTree(logger: Logger, component: ComponentMirror) {
 // this does not affect the current state of component tree
 // it affects the result that will be returned from findConnectedComponentsAtOrBelow
 function removeDomNodeFromComponentResult(componentMap: Map<string, ComponentMirror>, logger: Logger, node: DomNodeMirror): void {
-    for (const componentId of node.resultOf) {
+    for (const {id: componentId} of node.resultOf) {
         const component = componentMap.get(componentId);
         if (!component) {
             logger('error', `removeDomNodeFromComponentResult: component id ${componentId} is not found for result node ${node.id}`);
