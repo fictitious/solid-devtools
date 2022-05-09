@@ -13,13 +13,40 @@ import {InspectElementsButton} from './inspect-elements-button';
 
 const componentRowElements: Map<string, Element> = new Map();
 
-function treeRowClassList(isSelected: () => boolean) {
-    return {
-        'cursor-default': true,
-        'bg-slate-300': isSelected(),
-        'hover:bg-slate-100': !isSelected(),
-        'dark:hover:bg-slate-200': !isSelected()
-    };
+function ComponentTree(props: {registryMirror: RegistryMirror}) {
+    const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
+    const selectedComponentId = createMemo(() => selectedComponent()?.id);
+    useChannelListener('componentDisposed', ({id}: ComponentDisposed) => {
+        if (id === selectedComponentId()) {
+            setTreeSelection(undefined);
+        }
+    });
+    useChannelListener('inspectComponentSelected', ({componentId}: InspectComponentSelected) => {
+        const componentData = props.registryMirror.getComponent(componentId)?.componentData;
+        if (componentData) {
+            const componentRowElement = componentRowElements.get(componentId);
+            componentRowElement?.scrollIntoView({block: 'center'});
+            setTreeSelection({selectionType: 'component', componentData});
+        }
+    });
+
+    return <div class="h-full w-full flex flex-col">
+        <div class="w-full flex-none flex flex-row py-1">
+            <InspectElementsButton />
+            <div class="flex-none mx-auto px-8 text-red-700 font-bold">work in progress</div>
+        </div>
+        <div class="flex-auto w-full overflow-auto text-xs leading-snug">
+            <div class="min-w-fit">
+                <GlobalSignals globalSignals={props.registryMirror.globalSignals} />
+                <For each={props.registryMirror.domRootsData()}>{domRootData => <DomRootUI {...domRootData} />}</For>
+            </div>
+        </div>
+    </div>
+    ;
+}
+
+function DomRootUI(props: DomRootData) {
+    return <For each={props.getChildren()}>{component => <ComponentUI {...component} />}</For>;
 }
 
 function ComponentUI(props: ComponentData) {
@@ -62,40 +89,13 @@ function GlobalSignals(props: {globalSignals: () => SignalData[]}) {
     ;
 }
 
-function DomRootUI(props: DomRootData) {
-    return <For each={props.getChildren()}>{component => <ComponentUI {...component} />}</For>;
-}
-
-function ComponentTree(props: {registryMirror: RegistryMirror}) {
-    const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
-    const selectedComponentId = createMemo(() => selectedComponent()?.id);
-    useChannelListener('componentDisposed', ({id}: ComponentDisposed) => {
-        if (id === selectedComponentId()) {
-            setTreeSelection(undefined);
-        }
-    });
-    useChannelListener('inspectComponentSelected', ({componentId}: InspectComponentSelected) => {
-        const componentData = props.registryMirror.getComponent(componentId)?.componentData;
-        if (componentData) {
-            const componentRowElement = componentRowElements.get(componentId);
-            componentRowElement?.scrollIntoView({block: 'center'});
-            setTreeSelection({selectionType: 'component', componentData});
-        }
-    });
-
-    return <div class="h-full w-full flex flex-col">
-        <div class="w-full flex-none flex flex-row py-1">
-            <InspectElementsButton />
-            <div class="flex-none mx-auto px-8 text-red-700 font-bold">work in progress</div>
-        </div>
-        <div class="flex-auto w-full overflow-auto text-xs leading-snug">
-            <div class="min-w-fit">
-                <GlobalSignals globalSignals={props.registryMirror.globalSignals} />
-                <For each={props.registryMirror.domRootsData()}>{domRootData => <DomRootUI {...domRootData} />}</For>
-            </div>
-        </div>
-    </div>
-    ;
+function treeRowClassList(isSelected: () => boolean) {
+    return {
+        'cursor-default': true,
+        'bg-slate-300': isSelected(),
+        'hover:bg-slate-100': !isSelected(),
+        'dark:hover:bg-slate-200': !isSelected()
+    };
 }
 
 export {ComponentTree};

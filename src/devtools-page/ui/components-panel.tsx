@@ -20,52 +20,6 @@ interface ComponentsPanelProps {
     options: Options;
 }
 
-function TimeoutMessage() {
-    const [visible, setVisible] = createSignal(false);
-    const timeoutSeconds = 18;
-    createEffect(() => setTimeout(() => setVisible(true), timeoutSeconds * 1000));
-    return <Show when={visible()}><p>Seems like something went wrong. Try to close the browser window and open again.</p></Show>;
-}
-
-const connectionStateClass = 'pt-3 pl-3 text-sm leading-normal';
-
-function ConnectionStateSwitch(props: {connectionState: ConnectionState; children: JSX.Element}) {
-    const reload = () => chrome.devtools.inspectedWindow.reload({});
-    return <Switch>
-        <Match when={props.connectionState.hookType() === 'stub'}>
-            <div class={connectionStateClass}>
-                <p>The page was loaded while Solid devtools were not active.</p>
-                <p>Solid does not create data structures necessary for visualizing the component tree while the devtools window is not shown.</p>
-                <p>Click <button onclick={reload} class={buttonClass}>Reload</button> to reload the page</p>
-            </div>
-        </Match>
-        <Match when={props.connectionState.channelState() === 'disconnected'}>
-            <div class={connectionStateClass}>
-                <p>Solid devtools has disconnected from the page.</p>
-                <p>Please close devtools and open again to reconnect.</p>
-            </div>
-        </Match>
-        <Match when={props.connectionState.channelState() === 'connected-incapable'}>
-            <div class={connectionStateClass}>
-                <p>The page was updated while Solid devtools were not active.</p>
-                <p>Solid does not maintain data structures necessary for visualizing the component tree while the devtools window is not shown.</p>
-                <p>Click <button onclick={reload} class={buttonClass}>Reload</button> to reload the page.</p>
-            </div>
-        </Match>
-        <Match when={props.connectionState.channelState() === 'connecting'}>
-            <div class={connectionStateClass}>
-                <p>connecting...</p>
-                <TimeoutMessage />
-            </div>
-        </Match>
-        <Match when={props.connectionState.channelState() === 'connected'}>
-            <ChannelContext.Provider value={props.connectionState.channel()}>
-                {props.children}
-            </ChannelContext.Provider>
-        </Match>
-    </Switch>;
-}
-
 function ComponentsPanel(props: ComponentsPanelProps) {
     const SM_MIN_WIDTH_PIXELS = 640; // sm tailwindcss breakpoint
     const MIN_SIZE_PIXELS = 50; // min width/height for tree/props panels
@@ -142,6 +96,52 @@ function ComponentsPanel(props: ComponentsPanelProps) {
             </ComponentTreeSelectionContext.Provider>
         </ConnectionStateSwitch>
     </div>;
+}
+
+const connectionStateClass = 'pt-3 pl-3 text-sm leading-normal';
+
+function ConnectionStateSwitch(props: {connectionState: ConnectionState; children: JSX.Element}) {
+    const reload = () => chrome.devtools.inspectedWindow.reload({});
+    return <Switch>
+        <Match when={props.connectionState.hookType() === 'stub'}>
+            <div class={connectionStateClass}>
+                <p>The page was loaded while Solid devtools were not active.</p>
+                <p>Solid does not create data structures necessary for visualizing the component tree while the devtools window is not shown.</p>
+                <p>Click <button onclick={reload} class={buttonClass}>Reload</button> to reload the page</p>
+            </div>
+        </Match>
+        <Match when={props.connectionState.channelState() === 'disconnected'}>
+            <div class={connectionStateClass}>
+                <p>Solid devtools has disconnected from the page.</p>
+                <p>Please close devtools and open again to reconnect.</p>
+            </div>
+        </Match>
+        <Match when={props.connectionState.channelState() === 'connected-incapable'}>
+            <div class={connectionStateClass}>
+                <p>The page was updated while Solid devtools were not active.</p>
+                <p>Solid does not maintain data structures necessary for visualizing the component tree while the devtools window is not shown.</p>
+                <p>Click <button onclick={reload} class={buttonClass}>Reload</button> to reload the page.</p>
+            </div>
+        </Match>
+        <Match when={props.connectionState.channelState() === 'connecting'}>
+            <div class={connectionStateClass}>
+                <p>connecting...</p>
+                <TimeoutMessage />
+            </div>
+        </Match>
+        <Match when={props.connectionState.channelState() === 'connected'}>
+            <ChannelContext.Provider value={props.connectionState.channel()}>
+                {props.children}
+            </ChannelContext.Provider>
+        </Match>
+    </Switch>;
+}
+
+function TimeoutMessage() {
+    const [visible, setVisible] = createSignal(false);
+    const timeoutSeconds = 18;
+    createEffect(() => setTimeout(() => setVisible(true), timeoutSeconds * 1000));
+    return <Show when={visible()}><p>Seems like something went wrong. Try to close the browser window and open again.</p></Show>;
 }
 
 function saveResizeRatios(ratios: {}): void {

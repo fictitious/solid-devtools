@@ -7,13 +7,51 @@ import {ChannelContext} from './contexts/channel-context';
 import svgExpanded from './assets/expanded.svg';
 import svgCollapsed from './assets/collapsed.svg';
 
+function PropsList({values}: {values: SerializedValue}) {
+    if (values.t === 'array' || values.t === 'object') {
+        return <ValueList level={0} items={valueItems(values)} />;
+    } else {
+        return <ValueListLine {...valueLineProps(0, 'props', values)} />;
+    }
+}
+
+function SignalList(props: {signals: SignalData[]}) {
+    const channel = useContext(ChannelContext);
+    const signalClick = (signalId: string) => channel?.send('consoleLogSignalStack', {signalId});
+    return <For each={props.signals}>{signal =>  {
+        const t = signal.value.t;
+        const name = signal.name ?? signal.id;
+        const onclick = [signalClick, signal.id] as const;
+        if (t === 'array' || t === 'object') {
+            return <ValueListExpandableLine onclick={onclick} level={0} name={name} value={signal.value} />;
+        } else {
+            return <ValueListLine {...{...valueLineProps(0, name, signal.value), onclick}} />;
+        }
+    }}</For>
+    ;
+}
+
+type ItemsFunc = () => {name: string; value: SerializedValue}[];
+interface ValueListProps {
+    level: number;
+    items: ItemsFunc;
+}
+
+function ValueList(props: ValueListProps) {
+    return <For each={props.items()}>
+        {({name, value}) => <ValueListExpandableLine level={props.level} name={name} value={value} />}
+    </For>
+    ;
+}
+
+
 interface ValueListLineProps {
     level: number;
     name: string;
     valuePrefix?: string;
     valueString: string;
     expandButton?: () => JSX.Element;
-    onclick?: () => void;
+    onclick?: JSX.IntrinsicElements['div']['onclick'];
 }
 
 function ValueListLine(props: ValueListLineProps) {
@@ -60,7 +98,7 @@ interface ValueListExpandableLineProps {
     level: number;
     name: string;
     value: SerializedValue;
-    onclick?: () => void;
+    onclick?: ValueListLineProps['onclick'];
 }
 
 function ValueListExpandableLine(props: ValueListExpandableLineProps) {
@@ -77,19 +115,6 @@ function ValueListExpandableLine(props: ValueListExpandableLineProps) {
         <ValueListLine {...{...lineProps, onclick: props.onclick}} />
         {nested()}
     </>;
-}
-
-type ItemsFunc = () => {name: string; value: SerializedValue}[];
-interface ValueListProps {
-    level: number;
-    items: ItemsFunc;
-}
-
-function ValueList(props: ValueListProps) {
-    return <For each={props.items()}>
-        {({name, value}) => <ValueListExpandableLine level={props.level} name={name} value={value} />}
-    </For>
-    ;
 }
 
 function fixArray(a: SerializedValue[]): SerializedValue[] {
@@ -118,29 +143,6 @@ function valueItems(value: SerializedArray | SerializedObject): ItemsFunc {
         case 'object':
             return () => Object.entries(value.v).map(([n, v]) => ({name: n, value: v}));
     }
-}
-
-function PropsList({values}: {values: SerializedValue}) {
-    if (values.t === 'array' || values.t === 'object') {
-        return <ValueList level={0} items={valueItems(values)} />;
-    } else {
-        return <ValueListLine {...valueLineProps(0, 'props', values)} />;
-    }
-}
-
-function SignalList(props: {signals: SignalData[]}) {
-    const channel = useContext(ChannelContext);
-    return <For each={props.signals}>{signal =>  {
-        const t = signal.value.t;
-        const name = signal.name ?? signal.id;
-        const signalClick = () => channel?.send('consoleLogSignalStack', {signalId: signal.id});
-        if (t === 'array' || t === 'object') {
-            return <ValueListExpandableLine onclick={signalClick} level={0} name={name} value={signal.value} />;
-        } else {
-            return <ValueListLine {...{...valueLineProps(0, name, signal.value), onclick: signalClick}} />;
-        }
-    }}</For>
-    ;
 }
 
 export {PropsList, SignalList};

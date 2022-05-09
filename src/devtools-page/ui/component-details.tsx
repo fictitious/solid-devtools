@@ -7,18 +7,6 @@ import {PropsList, SignalList} from './value-list';
 
 const headerTextClass = 'py-0.5 mx-3 px-3 text-solid-light text-ellipsis overflow-hidden cursor-default';
 
-function ComponentSignals(props: {getSignals: () => SignalData[]}) {
-    const when = () => {
-        const signals = props.getSignals();
-        return signals.length ? signals : undefined;
-    };
-    return <Show when={when()}>{signals => <>
-        <div class={`w-full ${headerTextClass}`}>signals</div>
-        <SignalList signals={signals} />
-    </>}</Show>
-    ;
-}
-
 function ComponentDetails() {
     return <div class="h-full w-full flex flex-col">
 
@@ -40,6 +28,18 @@ function ComponentDetails() {
         </div>
 
     </div>
+    ;
+}
+
+function ComponentSignals(props: {getSignals: () => SignalData[]}) {
+    const when = () => {
+        const signals = props.getSignals();
+        return signals.length ? signals : undefined;
+    };
+    return <Show when={when()}>{signals => <>
+        <div class={`w-full ${headerTextClass}`}>signals</div>
+        <SignalList signals={signals} />
+    </>}</Show>
     ;
 }
 

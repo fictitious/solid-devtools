@@ -5,6 +5,12 @@ import {createStore} from 'solid-js/store';
 import type {Options} from './options-types';
 import {loadOptions, saveOptions} from './options';
 
+function OptionsUI() {
+    const [options] = createResource(loadOptions);
+    return <Show when={!options.loading} fallback="Loading..."><OptionsForm options={options() || {}} /></Show>
+    ;
+}
+
 function OptionsForm(props: {options: Options}) {
     const [options, setOptions] = createStore(props.options);
 
@@ -35,13 +41,6 @@ function OptionsForm(props: {options: Options}) {
             {optionsCheckbox('logAllMessages', `Log all messages from page`)}
         </fieldset>
     </form>
-    ;
-}
-
-function OptionsUI() {
-
-    const [options] = createResource(loadOptions);
-    return <Show when={!options.loading} fallback="Loading..."><OptionsForm options={options() || {}} /></Show>
     ;
 }
 

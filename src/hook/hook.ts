@@ -160,7 +160,7 @@ class HookImpl extends HookBaseImpl implements Hook {
             return (setter, signalState, name) => {
                 let stack: string | undefined;
                 try {
-                    throw new Error('(Not an Error, actually): Just the stack where signal was created');
+                    throw new Error('(Not an Error, actually): Just to show the stack where signal was created');
                 } catch (e) {
                     stack = (e as Error).stack;
                 }
