@@ -1,5 +1,5 @@
 
-import type {Component, Computation, ComputationType, RegisterSolidInstance as SolidInstance} from 'solid-js';
+import type {JSX, Component, Computation, ComputationType, RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {DomNodeAppended, DomNodeInserted} from '../../channel/channel-message-types';
 import type {Channel} from '../../channel/channel-types';
@@ -54,7 +54,7 @@ class RegistryImpl extends RegistryConnectionImpl implements Registry {
         return this.signalMap.get(id);
     }
 
-    registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component> {
+    registerComponentResult(result: JSX.Element, index: number[], component: ComponentItem): JSX.Element {
         if (result instanceof Node) { // TODO handle primitive types (string / number etc - needs more patching in solid insertParent)
             const node = this.registerDomNode(result as Node & NodeExtra);
             const nodeExtra = node[solidDevtoolsKey];

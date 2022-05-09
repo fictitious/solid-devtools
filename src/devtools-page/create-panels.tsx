@@ -1,5 +1,5 @@
 
-import type {Component} from 'solid-js';
+import type {JSX} from 'solid-js';
 import {render} from 'solid-js/web';
 
 import type {Options} from '../options/options-types';
@@ -47,7 +47,7 @@ function createPanels(connectionState: ConnectionState, registryMirror: Registry
 
 const renderedPanelWindows: Set<Window> = new Set();
 
-function renderPanelOnce(panelWindow: Window, ui: () => ReturnType<Component>): void {
+function renderPanelOnce(panelWindow: Window, ui: () => JSX.Element): void {
     if (!renderedPanelWindows.has(panelWindow)) {
         renderedPanelWindows.add(panelWindow);
         panelWindow.addEventListener('unload', () => {

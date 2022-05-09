@@ -1,5 +1,5 @@
 
-import type {Component, Setter, Computation, ComputationType, RegisterSolidInstance as SolidInstance} from 'solid-js';
+import type {JSX, Component, Setter, Computation, ComputationType, RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-types';
 import type {DomNodeAppended, DomNodeInserted, RegistryStateMessageNames, RegistryStateMessageNoSerialMap} from '../../channel/channel-message-types';
@@ -26,7 +26,7 @@ export interface RegisterSignal {
 export interface Registry extends RegistryConnection {
     registerComponent(comp: Component, props?: ComponentProps): ComponentItem;
     unregisterComponent(id: string): void;
-    registerComponentResult(result: ReturnType<Component>, index: number[], component: ComponentItem): ReturnType<Component>;
+    registerComponentResult(result: JSX.Element, index: number[], component: ComponentItem): JSX.Element;
     registerDomNode(node: Node & NodeExtra): Node & Required<Node & NodeExtra>;
     nodeRemoved(node: Node & NodeExtra): void;
     registerDOMRoot(node: Node & NodeExtra): void;

@@ -1,12 +1,10 @@
 
-import type {Component, RegisterSolidInstance as SolidInstance} from 'solid-js';
+import type {JSX, Component, RegisterSolidInstance as SolidInstance} from 'solid-js';
 
 import type {ComponentItem} from '../registry/node-component-types';
 import type {Registry} from '../registry/registry-types';
 
-type ComponentResult = ReturnType<Component> | (() => ComponentResult) | ComponentResult[];
-
-function wrapComponent<T>(comp: Component<T>, solidInstance: SolidInstance, registry: Registry): (props: T) => ComponentResult {
+function wrapComponent<T>(comp: Component<T>, solidInstance: SolidInstance, registry: Registry): (props: T) => JSX.Element {
     return new Proxy(
         (props: T) => {
 
@@ -33,7 +31,7 @@ function wrapComponent<T>(comp: Component<T>, solidInstance: SolidInstance, regi
     );
 }
 
-function wrapComponentResult(componentItem: ComponentItem, result: ComponentResult, index: number[] | undefined, registry: Registry): ComponentResult {
+function wrapComponentResult(componentItem: ComponentItem, result: JSX.Element, index: number[] | undefined, registry: Registry): JSX.Element {
     if (Array.isArray(result)) {
         const nextIndex = (i: number) => index === undefined ? [i] : [...index, i];
         return result.map((r, i) => wrapComponentResult(componentItem, r, nextIndex(i), registry));
