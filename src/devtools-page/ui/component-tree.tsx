@@ -1,5 +1,4 @@
 
-import type {Accessor, Component} from 'solid-js';
 import {For, useContext, onCleanup, createMemo} from 'solid-js';
 
 import type {ComponentDisposed, InspectComponentSelected} from '../../channel/channel-message-types';
@@ -23,51 +22,51 @@ function treeRowClassList(isSelected: () => boolean) {
     };
 }
 
-const ComponentUI: Component<ComponentData> = componentData => {
-    const level = componentData.level() ?? 0;
+function ComponentUI(props: ComponentData) {
+    const level = props.level() ?? 0;
     const indent = 1.5 * (level - 1);
     const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
-    const isSelected = createMemo(() => componentData.id === selectedComponent()?.id);
+    const isSelected = createMemo(() => props.id === selectedComponent()?.id);
     const exposeIds = useContext(OptionsContext)?.exposeIds;
     const channel = useContext(ChannelContext)!;
     const onMouseEnter = (cd: ComponentData) => channel.send('highlightComponent', {componentId: cd.id});
     const onMouseLeave = () => channel.send('stopHighlightComponent', {});
-    onCleanup(() => componentRowElements.delete(componentData.id));
+    onCleanup(() => componentRowElements.delete(props.id));
     return <>
         <div
-            ref={element => componentRowElements.set(componentData.id, element)}
-            onclick={[setTreeSelection, {selectionType: 'component', componentData}]}
-            onmouseenter={[onMouseEnter, componentData]}
+            ref={element => componentRowElements.set(props.id, element)}
+            onclick={[setTreeSelection, {selectionType: 'component', componentData: props}]}
+            onmouseenter={[onMouseEnter, props]}
             onmouseleave={onMouseLeave}
             classList={treeRowClassList(isSelected)}
             style={{'padding-left': `${indent}em`}}
         >
-            {componentText(componentData, exposeIds)}
+            {componentText(props, exposeIds)}
         </div>
-        <For each={componentData.getChildren()}>{component => <ComponentUI {...component} />}</For>
+        <For each={props.getChildren()}>{component => <ComponentUI {...component} />}</For>
     </>
     ;
-};
+}
 
 function componentText(componentData: ComponentData, exposeIds?: boolean): string {
     const id = exposeIds ? ` [${componentData.id}]` : '';
     return componentData.name + id;
 }
 
-const GlobalSignals: Component<{globalSignals: Accessor<SignalData[]>}> = props => {
+function GlobalSignals(props: {globalSignals: () => SignalData[]}) {
     const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
     const isSelected = createMemo(() => !!selectedGlobalSignals());
     return <div onclick={[setTreeSelection, {selectionType: 'globalSignals', globalSignals: props.globalSignals}]} classList={treeRowClassList(isSelected)}>
         Global Signals
     </div>
     ;
-};
+}
 
-const DomRootUI: Component<DomRootData> = domRootData =>
-    <For each={domRootData.getChildren()}>{component => <ComponentUI {...component} />}</For>
-;
+function DomRootUI(props: DomRootData) {
+    return <For each={props.getChildren()}>{component => <ComponentUI {...component} />}</For>;
+}
 
-const ComponentTree: Component<{registryMirror: RegistryMirror}> = props => {
+function ComponentTree(props: {registryMirror: RegistryMirror}) {
     const {setTreeSelection} = useContext(ComponentTreeSelectionContext)!;
     const selectedComponentId = createMemo(() => selectedComponent()?.id);
     useChannelListener('componentDisposed', ({id}: ComponentDisposed) => {
@@ -97,6 +96,6 @@ const ComponentTree: Component<{registryMirror: RegistryMirror}> = props => {
         </div>
     </div>
     ;
-};
+}
 
 export {ComponentTree};

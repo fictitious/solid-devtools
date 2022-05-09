@@ -1,5 +1,5 @@
 
-import type {Component, Setter} from 'solid-js';
+import type {Setter} from 'solid-js';
 import {createSignal, useContext} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-types';
@@ -7,7 +7,7 @@ import {ChannelContext} from './contexts/channel-context';
 import {useChannelListener} from './contexts/use-channel-listener';
 import svgInspectElementOnPage from './assets/inspect-element-on-page.svg';
 
-const InspectElementsButton: Component = () => {
+function InspectElementsButton() {
     const [inspectingElements, setInspectingElements] = createSignal(false);
     const toggleInspectingElements = toggleInspectingElementHandler(setInspectingElements, useContext(ChannelContext));
     useChannelListener('inspectComponentEnded', () => setInspectingElements(false));
@@ -20,7 +20,7 @@ const InspectElementsButton: Component = () => {
         <svg onclick={toggleInspectingElements} class="w-4 h-4"><use href={`${svgInspectElementOnPage}#main`}></use></svg>
     </div>
     ;
-};
+}
 
 function toggleInspectingElementHandler(setInspectingElements: Setter<boolean>, channel?: Channel<'devtools'>): () => void {
     return () => setInspectingElements(oldValue => {

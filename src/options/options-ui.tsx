@@ -1,12 +1,11 @@
 
-import type {Component} from 'solid-js';
 import {createResource, Show} from 'solid-js';
 import {createStore} from 'solid-js/store';
 
 import type {Options} from './options-types';
 import {loadOptions, saveOptions} from './options';
 
-const OptionsForm: Component<{options: Options}> = props => {
+function OptionsForm(props: {options: Options}) {
     const [options, setOptions] = createStore(props.options);
 
     const setOption = (optionName: keyof Options, e: Event & {currentTarget: HTMLInputElement}) => {
@@ -35,15 +34,15 @@ const OptionsForm: Component<{options: Options}> = props => {
             {optionsCheckbox('showLogPanel', `Show internal debug log panel`)}
             {optionsCheckbox('logAllMessages', `Log all messages from page`)}
         </fieldset>
-    </form>;
-};
+    </form>
+    ;
+}
 
-const OptionsPage: Component = () => {
+function OptionsUI() {
+
     const [options] = createResource(loadOptions);
+    return <Show when={!options.loading} fallback="Loading..."><OptionsForm options={options() || {}} /></Show>
+    ;
+}
 
-    return <Show when={!options.loading} fallback="Loading..."><OptionsForm options={options() || {}} /></Show>;
-};
-
-const optionsUI = () => <OptionsPage />;
-
-export {optionsUI};
+export {OptionsUI};

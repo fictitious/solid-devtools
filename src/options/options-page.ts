@@ -1,7 +1,7 @@
 
 import {render} from 'solid-js/web';
 
-import {optionsUI} from './options-ui';
+import {OptionsUI} from './options-ui';
 
 const rootElement = document.getElementById('root');
-render(optionsUI, rootElement!);
+render(OptionsUI, rootElement!);

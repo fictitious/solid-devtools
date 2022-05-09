@@ -1,5 +1,4 @@
 
-import type {Component} from 'solid-js';
 import {onMount} from 'solid-js';
 
 import type {Channel} from '../../channel/channel-types';
@@ -9,7 +8,7 @@ import {buttonClass} from './common-styles';
 
 const toolbarButtonClass = `${buttonClass} mx-3`;
 
-const DebugLogPanel: Component<{debugLog: DebugLog; registryMirror: RegistryMirror; channel: () => Channel<'devtools'> | undefined}> = props => {
+function DebugLogPanel(props: {debugLog: DebugLog; registryMirror: RegistryMirror; channel: () => Channel<'devtools'> | undefined}) {
 
     const logRegistry = () => {
         console.log(`registryMirror`, props.registryMirror);
@@ -25,7 +24,7 @@ const DebugLogPanel: Component<{debugLog: DebugLog; registryMirror: RegistryMirr
         </div>
         <div ref={renderer.div} class="w-full flex-auto overflow-auto text-xs leading-tight"></div>
     </div>;
-};
+}
 
 class DebugLogRenderer {
     div: HTMLDivElement | undefined;

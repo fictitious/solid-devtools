@@ -1,4 +1,5 @@
-import type {Component} from 'solid-js';
+
+import type {JSX} from 'solid-js';
 import {createSignal, createEffect, Show, Switch, Match} from 'solid-js';
 
 import type {ConnectionState} from '../connection/connection-state-types';
@@ -19,16 +20,16 @@ interface ComponentsPanelProps {
     options: Options;
 }
 
-const TimeoutMessage: Component = () => {
+function TimeoutMessage() {
     const [visible, setVisible] = createSignal(false);
     const timeoutSeconds = 18;
     createEffect(() => setTimeout(() => setVisible(true), timeoutSeconds * 1000));
     return <Show when={visible()}><p>Seems like something went wrong. Try to close the browser window and open again.</p></Show>;
-};
+}
 
 const connectionStateClass = 'pt-3 pl-3 text-sm leading-normal';
 
-const ConnectionStateSwitch: Component<{connectionState: ConnectionState}> = props => {
+function ConnectionStateSwitch(props: {connectionState: ConnectionState; children: JSX.Element}) {
     const reload = () => chrome.devtools.inspectedWindow.reload({});
     return <Switch>
         <Match when={props.connectionState.hookType() === 'stub'}>
@@ -63,9 +64,9 @@ const ConnectionStateSwitch: Component<{connectionState: ConnectionState}> = pro
             </ChannelContext.Provider>
         </Match>
     </Switch>;
-};
+}
 
-const ComponentsPanel: Component<ComponentsPanelProps> = props => {
+function ComponentsPanel(props: ComponentsPanelProps) {
     const SM_MIN_WIDTH_PIXELS = 640; // sm tailwindcss breakpoint
     const MIN_SIZE_PIXELS = 50; // min width/height for tree/props panels
     let outerContainer!: HTMLDivElement;
@@ -141,7 +142,7 @@ const ComponentsPanel: Component<ComponentsPanelProps> = props => {
             </ComponentTreeSelectionContext.Provider>
         </ConnectionStateSwitch>
     </div>;
-};
+}
 
 function saveResizeRatios(ratios: {}): void {
     localStorage.setItem(LOCAL_STORAGE_DEVTOOLS_COMPONENTS_PANEL_RESIZE_KEY, JSON.stringify(ratios));
